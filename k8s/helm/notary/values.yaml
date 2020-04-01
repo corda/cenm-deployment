@@ -1,0 +1,63 @@
+# Default values for Notary service.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+bashDebug: false
+
+dockerImage:
+  name: corda/notary
+  tag: 1.2-zulu-openjdk8u242
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 20003
+
+cordaJarMx: 3
+devMode: false
+sshdPort: 2222
+p2pPort: 10002
+
+rpcSettingsAddress: "0.0.0.0"
+rpcSettingsAddressPort: 10003
+rpcSettingsAdminAddress: "localhost"
+rpcSettingsAdminAddressPort: 10770
+rpcSettingsStandAloneBroker: false
+rpcSettingsUseSsl: false
+
+networkServices:
+  doormanURL: "http://idman-ip:10000"
+  networkMapURL: "http://nmap:10000"
+
+dataSourceProperties:
+  dataSource:
+    password: "ziAscD0MJnj4n4xkFWY6XuMBuw9bvYC7"
+    url: "jdbc:h2:file:./h2/notary-persistence;DB_CLOSE_ON_EXIT=FALSE;WRITE_DELAY=0;LOCK_TIMEOUT=10000"
+    user: "sa"
+  dataSourceClassName: "org.h2.jdbcx.JdbcDataSource"
+
+notary:
+  validating: false
+  
+rpcUsers:
+  username: notary
+  password: notaryP
+
+# required parameter
+notaryPublicIP:
+
+sleepTimeAfterError: 120
+sleepTime: 0
+
+# where is CENM service jar file stored
+jarPath: bin
+
+# where is CENM service configuration file stored
+configPath: etc
+
+healthCheckNodePort: 0
+
+jksSource: ""

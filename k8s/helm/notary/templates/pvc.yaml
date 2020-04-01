@@ -1,0 +1,91 @@
+{{- $DATE := ( include "currentDateTime" . ) }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notary-bin-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notary-etc-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 1Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notary-nodeinfo
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 1Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notary-certificates-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 5Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notary-logs-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 5Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notary-h2-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 20Mi

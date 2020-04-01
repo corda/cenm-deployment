@@ -1,0 +1,61 @@
+{{- $DATE := ( include "currentDateTime" . ) }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nmap-bin-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nmap-etc-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 1Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nmap-logs-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nmap-h2-{{ $DATE }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: cenm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: cenm
+  resources:
+    requests:
+      storage: 10Gi

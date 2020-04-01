@@ -1,0 +1,57 @@
+# Default values for Identity Manager service.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# to debug bash scripts using 'set -x'
+
+nameOverride: ""
+fullnameOverride: ""
+
+bashDebug: false
+
+dockerImage:
+  name: corda/enterprise-identitymanager
+  tag: 1.2-zulu-openjdk8u242
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 10000
+
+serviceInternal:
+  type: LoadBalancer
+  port: 5052
+
+serviceRevocation:
+  port: 5053
+
+serviceSsh:
+  type: LoadBalancer
+
+shell:
+  sshdPort: 2222
+  user: idman
+  password: idmanP  
+
+database:
+  driverClassName: "org.h2.Driver"
+  url: "jdbc:h2:file:./h2/identity-manager-persistence;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=0;AUTO_SERVER_PORT=0"
+  user: "example-db-user"
+  password: "example-db-password"
+  runMigration: "true"
+
+# required parameter
+idmanPublicIP:
+
+cordaJarMx: 1
+
+healthCheckNodePort: 0
+
+# where is CENM service jar file stored
+jarPath: bin
+
+# where is CENM service configuration file stored
+configPath: etc
+
+sleepTimeAfterError: 120
+sleepTime: 0

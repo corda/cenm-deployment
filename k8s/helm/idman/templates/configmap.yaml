@@ -1,0 +1,15 @@
+{{- $DATE := ( include "currentDateTime" . ) }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: idman-conf-{{ $DATE }}
+  labels:
+{{ include "idman.labels" . | indent 4 }}
+data:
+  run.sh: |+
+{{ tpl (.Files.Get "files/run.sh") . | indent 4 }}
+
+  idman.conf: |+
+{{ tpl (.Files.Get "files/idman.conf") . | indent 4 }}

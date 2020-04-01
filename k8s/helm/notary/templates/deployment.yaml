@@ -1,0 +1,141 @@
+{{- $DATE := ( include "currentDateTime" . ) }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "notary.fullname" . }}
+  labels:
+{{ include "notary.labels" . | indent 4 }}
+{{ include "cenm.labels" . | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "notary.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "cenm.labels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "notary.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "cenm.labels" . | indent 8 }}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+      - name: registration
+        image: "{{ required "notary[registration]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "notary[registration]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |-
+          cp CM-FILES/notary.conf etc/
+          cp CM-FILES/*.sh bin/
+          chmod +x bin/*
+          bin/notary-initial-registration.sh
+          bin/create-network-parameters-file.sh
+        volumeMounts:
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/notary.conf
+          subPath: notary.conf
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/notary-initial-registration.sh
+          subPath: notary-initial-registration.sh
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/create-network-parameters-file.sh
+          subPath: create-network-parameters-file.sh
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/run.sh
+          subPath: run.sh
+        - name: notary-etc
+          mountPath: /opt/corda/etc
+        - name: notary-certificates
+          mountPath: /opt/corda/certificates
+        - name: notary-nodeinfo
+          mountPath: /opt/corda/additional-node-infos
+        - name: notary-logs
+          mountPath: /opt/corda/logs
+        - name: notary-h2
+          mountPath: /opt/corda/h2
+        - name: pkitool-certs-keys
+          mountPath: /opt/corda/DATA
+        resources:
+          requests:
+            memory: {{ .Values.cordaJarMx }}G
+          limits:
+            memory: {{ add .Values.cordaJarMx 2 }}G
+      containers:
+      - name: main
+        image: "{{ required "notary[main]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "notary[main]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |-
+          cp CM-FILES/*.sh bin/
+          chmod +x bin/*
+          bin/run.sh
+        volumeMounts:
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/notary.conf
+          subPath: notary.conf
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/notary-initial-registration.sh
+          subPath: notary-initial-registration.sh
+        - name: notary-conf
+          mountPath: /opt/corda/CM-FILES/run.sh
+          subPath: run.sh
+        - name: notary-etc
+          mountPath: /opt/corda/etc
+        - name: notary-certificates
+          mountPath: /opt/corda/certificates
+        - name: notary-logs
+          mountPath: /opt/corda/logs
+        - name: notary-h2
+          mountPath: /opt/corda/h2
+        - name: pkitool-certs-keys
+          mountPath: /opt/corda/DATA
+        resources:
+          requests:
+            memory: {{ .Values.cordaJarMx }}G
+          limits:
+            memory: {{ add .Values.cordaJarMx 2 }}G
+      - name: logs
+        image: "{{ required "notary[logs]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "notary[logs]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |-
+          cd /opt/corda/
+          while true; do tail -f logs/*.log 2>/dev/null; sleep 5; done
+          # in case sth went wrong just wait indefinitely ...
+          tail -f /dev/null
+        volumeMounts:
+        - name: notary-logs
+          mountPath: /opt/corda/logs
+      imagePullSecrets:
+      - name: cenm-registry
+      volumes:
+      - name: notary-conf
+        configMap:
+          name: notary-conf-{{ $DATE }}
+      - name: notary-etc
+        persistentVolumeClaim:
+          claimName: notary-etc-{{ $DATE }}
+      - name: notary-certificates
+        persistentVolumeClaim:
+          claimName: notary-certificates-{{ $DATE }}
+      - name: notary-logs
+        persistentVolumeClaim:
+          claimName: notary-logs-{{ $DATE }}
+      - name: notary-nodeinfo
+        persistentVolumeClaim:
+          claimName: notary-nodeinfo
+      - name: notary-h2
+        persistentVolumeClaim:
+          claimName: notary-h2-{{ $DATE }}
+      - name: pkitool-certs-keys
+        persistentVolumeClaim:
+          claimName: pkitool-certs-keys

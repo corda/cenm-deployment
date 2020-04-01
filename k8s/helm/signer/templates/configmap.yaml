@@ -1,0 +1,27 @@
+{{- $DATE := ( include "currentDateTime" . ) }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cenm-conf-{{ $DATE }}
+  labels:
+{{ include "signer.labels" . | indent 4 }}
+{{ include "cenm.labels" . | indent 4 }}
+data:
+
+  signer.conf: |+
+{{ tpl (.Files.Get "files/signer.conf") . | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pkitool-conf-{{ $DATE }}
+  labels:
+{{ include "signer.labels" . | indent 4 }}
+{{ include "cenm.labels" . | indent 4 }}
+data:
+
+  pki.conf: |+
+{{ tpl (.Files.Get "files/pki.conf") . | indent 4 }}

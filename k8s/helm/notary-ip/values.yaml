@@ -1,0 +1,13 @@
+# Default values for notary-ip.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: LoadBalancer
+  p2pPort: 10002
+  sshdPort: 2222
+
+healthCheckNodePort: 0

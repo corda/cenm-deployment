@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+
+set -ef -o pipefail
+
+print_help () {
+cat << EOF
+Usage: ${0##*/} ...
+    -h                 display help and exit
+    -i|--idman  [name] provide idman  kubernetes service name
+    -n|--notary [name] provide notary kubernetes service name
+    -a|--auto          complete script without further prompts to the user
+
+EOF
+}
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+        -h|-\?|--help)
+            print_help
+            exit
+            ;;
+        -n|--notary)
+            notaryServiceName="${2}"
+            shift
+            shift
+            ;;
+        -i|--idman)
+            idmanServiceName="${2}"
+            shift
+            shift
+            ;;
+        -a|--auto)
+            auto=True
+            shift
+            ;;
+        *)
+            print_help
+            exit
+            ;;
+    esac
+done
+
+printf "\nYour current kubectl context:\n\n"
+printf "kubectl config context: %s\n" "$(kubectl config current-context)"
+printf "             namespace: %s\n" "$(kubectl config view --minify --output 'jsonpath={..namespace}')"
+if [ -z "${auto}" ]
+then
+    printf "\nDo you want to continue ? (y/n) "
+    read -r answer
+    [[ "${answer}" != "y" ]] && { 
+        printf "\nPlease run these commands with correct parameters and start this script again:\n"
+        printf "\tkubectl config use-context ...\n"
+        exit;
+    }
+fi
+announce () {
+    printf "\n~~~~~~~~~~~~~~~~\n~~~~~~~~~~~~~~~~    %s \n~~~~~~~~~~~~~~~~\n" "${1}"
+}
+
+# we will measure and display how long it took to bootstrap new environment
+startTime=${SECONDS}
+
+#
+# the very first steps are to (optionally) trigger public IP allocation for idman and notary as this is what is the most time consuming
+#
+
+if [ -z "${idmanServiceName}" ]
+then
+    idmanServiceAllocate=true
+    idmanServiceName=idman-ip
+    # trigger public IP allocation for idman
+    announce "Triggering public IP allocation for Identity Manager"
+    printf "COMMAND: helm install idman-ip idman-ip\n\n"
+    helm install idman-ip idman-ip
+fi
+
+if [ -z "${notaryServiceName}" ]
+then
+    notaryServiceAllocate=true
+    notaryServiceName=notary-ip
+    # trigger public IP allocation for notary
+    announce "Triggering public IP allocation for Notary"
+    printf "COMMAND: helm install notary-ip notary-ip\n\n"
+    helm install notary-ip notary-ip
+fi
+
+if [ "${idmanServiceAllocate}" == "true" ]
+then
+    announce "Waiting until cloud provider has allocated public IP for Identity Manager (it may take a few minutes)"
+    idmanStartTime=${SECONDS}
+else    
+    announce "Checking public IP allocated for Identity Manager"
+fi    
+
+while [ -z "${idmanPublicIP}" ]
+do
+    idmanPublicIP=$(kubectl get svc ${idmanServiceName} --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    # if idmanPublicIP has some value don't print anything on the screen
+    if [ -z "${idmanPublicIP}" ]
+    then
+        printf "."
+        sleep 5
+    else
+        printf "\nidmanPublicIP = %s\n" "${idmanPublicIP}"
+    fi
+done
+# show elapsed time only if you allocated new IP
+if [ -n "${idmanStartTime}" ]
+then
+    elapsedTime=$((SECONDS - idmanStartTime))
+    printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
+fi
+
+announce "Creating Signer"
+printf "COMMAND: helm install signer signer --set idmanPublicIP=%s\n\n" "${idmanPublicIP}"
+helm install signer signer --set idmanPublicIP="${idmanPublicIP}"
+
+announce "Creating IdMan"
+printf "COMMAND: helm install idman idman\n\n"
+helm install idman idman
+
+if [ "${notaryServiceAllocate}" == "true" ]
+then
+    announce "Waiting until cloud provider has allocated public IP for Notary (it may take a few minutes)"
+    notaryStartTime=${SECONDS}
+else    
+    announce "Checking public IP allocated for Notary"
+fi    
+
+while [ -z "${notaryPublicIP}" ]
+do
+    notaryPublicIP=$(kubectl get svc ${notaryServiceName} --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    # if notaryPublicIP has some value don't print anything on the screen
+    if [ -z "${notaryPublicIP}" ]
+    then
+        printf "."
+        sleep 5
+    else
+        printf "\nnotaryPublicIP = %s\n" "${notaryPublicIP}"
+    fi
+done
+# show elapsed time only if you allocated new IP
+if [ -n "${notaryStartTime}" ]
+then
+    elapsedTime=$((SECONDS - notaryStartTime))
+    printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
+fi
+
+announce "Creating Notary"
+printf "COMMAND: helm install notary notary --set notaryPublicIP=%s\n\n" "${notaryPublicIP}"
+helm install notary notary --set notaryPublicIP="${notaryPublicIP}"
+
+announce "Creating NetworkMap"
+printf "COMMAND: helm install nmap nmap\n\n"
+helm install nmap nmap
+
+announce "Waiting until cloud provider has allocated public IP for Signer (it may take a few minutes)"
+signerStartTime=${SECONDS}
+while [ -z "${signerPublicIP}" ]
+do
+    signerPublicIP=$(kubectl get svc signer --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    # if notaryPublicIP has some value don't print anything on the screen
+    if [ -z "${signerPublicIP}" ]
+    then
+        printf "."
+        sleep 5
+    else
+        printf "\nsignerPublicIP = %s\n" "${signerPublicIP}"
+    fi
+done
+
+elapsedTime=$((SECONDS - signerStartTime))
+printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
+
+announce "Waiting until cloud provider has allocated public IP for Network Map (it may take a few minutes)"
+nmapStartTime=${SECONDS}
+while [ -z "${nmapPublicIP}" ]
+do
+    nmapPublicIP=$(kubectl get svc nmap --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    # if notaryPublicIP has some value don't print anything on the screen
+    if [ -z "${nmapPublicIP}" ]
+    then
+        printf "."
+        sleep 5
+    else
+        printf "\nnmapPublicIP = %s\n" "${nmapPublicIP}"
+    fi
+done
+
+elapsedTime=$((SECONDS - nmapStartTime))
+printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
+
+elapsedTime=$((SECONDS - startTime))
+printf "\n\nOverall elapsed time: %s seconds (~ %s minutes)\n\n" "${elapsedTime}" "$((elapsedTime/60%60))"
+
+printf "\n\nPlease wait until all components have finished bootstrapping - use 'kubectl get pods -o wide' to monitor progress.\n"
+
+printf "\n\nHow to ssh to each CENM component (using default helm values taken from <helm-chart>/values.yaml):\n"
+printf "ssh -p 2222 -l idman  %s\n" "${idmanPublicIP}"
+printf "ssh -p 2222 -l signer %s\n" "${signerPublicIP}"
+printf "ssh -p 2222 -l notary %s\n" "${notaryPublicIP}"
+printf "ssh -p 2222 -l nmap   %s\n" "${nmapPublicIP}"
+
+idmanPort=$(kubectl get svc idman-ip -o=jsonpath="{.spec.ports[0].port}")
+nmapPort=$(kubectl get svc nmap -o=jsonpath="{.spec.ports[0].port}")
+
+printf "\nPlease use this snippet in your node.conf to register Corda nodes:\n"
+printf "\nnetworkServices {\n"
+printf "\tdoormanURL=\"http://%s:%s\"\n" "${idmanPublicIP}" "${idmanPort}"
+printf "\tnetworkMapURL=\"http://%s:%s\"\n}\n\n" "${nmapPublicIP}" "${nmapPort}"

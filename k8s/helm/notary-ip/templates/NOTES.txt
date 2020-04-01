@@ -1,0 +1,9 @@
+
+It may take a few minutes for the public IP to be available. You can watch the status of by running this command (and watching column 'EXTERNAL-IP'):
+
+    kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "notary-ip.fullname" . }}
+
+You can later get public IP address again by running this command:
+
+    kubectl get svc --namespace {{ .Release.Namespace }} {{ include "notary-ip.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}"
+
