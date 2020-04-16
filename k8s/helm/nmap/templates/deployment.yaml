@@ -5,8 +5,8 @@ kind: Deployment
 metadata:
   name: {{ include "nmap.fullname" . }}
   labels:
-{{ include "nmap.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
+  {{ include "nmap.labels" . | indent 4 }}
+  {{ include "cenm.labels" . | indent 4 }}
 spec:
   replicas: 1
   selector:
@@ -26,90 +26,96 @@ spec:
       initContainers:
         - name: setnparam
           image: "{{ required "nmap[setnparam]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "nmap[setnparam]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+          env:
+            - name: ACCEPT_LICENSE
+              value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
           imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
           command: ["/bin/bash", "-c"]
           args:
-          - |-
-            cp -r CM-FILES/*.conf etc/
-            cp -r CM-FILES/*.sh bin/
-            chmod +x bin/*
-            if [ ! -f {{ .Values.configPath }}/network-parameters-initial-set-succesfully ]
-            then
-              bin/set-network-parameters.sh
-            fi
+            - |-
+              cp -r CM-FILES/*.conf etc/
+              cp -r CM-FILES/*.sh bin/
+              chmod +x bin/*
+              if [ ! -f {{ .Values.configPath }}/network-parameters-initial-set-succesfully ]
+              then
+                bin/set-network-parameters.sh
+              fi
           volumeMounts:
-          - name: nmap-conf
-            mountPath: /opt/corda/CM-FILES/nmap.conf
-            subPath: nmap.conf
-          - name: example-network-parameters-update-conf
-            mountPath: /opt/corda/CM-FILES/example-network-parameters-update.conf
-            subPath: example-network-parameters-update.conf
-          - name: nmap-conf
-            mountPath: /opt/corda/CM-FILES/set-network-parameters.sh
-            subPath: set-network-parameters.sh
-          - name: notary-nodeinfo
-            mountPath: /opt/corda/notary-nodeinfo
-          - name: nmap-h2
-            mountPath: /opt/corda/h2
-          - name: nmap-etc
-            mountPath: /opt/corda/etc
-          - name: nmap-logs
-            mountPath: /opt/corda/logs
-          - name: pkitool-certs-keys
-            mountPath: /opt/corda/DATA
+            - name: nmap-conf
+              mountPath: /opt/corda/CM-FILES/nmap.conf
+              subPath: nmap.conf
+            - name: nmap-conf
+              mountPath: /opt/corda/CM-FILES/set-network-parameters.sh
+              subPath: set-network-parameters.sh
+            - name: notary-nodeinfo
+              mountPath: /opt/corda/notary-nodeinfo
+            - name: nmap-h2
+              mountPath: /opt/corda/h2
+            - name: nmap-etc
+              mountPath: /opt/corda/etc
+            - name: nmap-logs
+              mountPath: /opt/corda/logs
+            - name: pkitool-certs-keys
+              mountPath: /opt/corda/DATA
           resources:
             requests:
               memory: {{ .Values.cordaJarMx }}G
             limits:
               memory: {{ add .Values.cordaJarMx 2 }}G
       containers:
-        - name: main
-          image: "{{ required "nmap[main]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "nmap[main]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
-          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
-          command: ["/bin/bash", "-c"]
-          args:
-          - |-
-            cp -r CM-FILES/*.sh bin/
-            # cp -r nodeinfo/network-parameters-initial.conf etc/network-parameters-initial.conf
-            chmod +x bin/*
-            bin/run.sh
-          volumeMounts:
-          - name: nmap-conf
-            mountPath: /opt/corda/CM-FILES/nmap.conf
-            subPath: nmap.conf
-          - name: nmap-conf
-            mountPath: /opt/corda/CM-FILES/run.sh
-            subPath: run.sh
-          - name: notary-nodeinfo
-            mountPath: /opt/corda/notary-nodeinfo
-          - name: nmap-h2
-            mountPath: /opt/corda/h2
-          - name: nmap-etc
-            mountPath: /opt/corda/etc
-          - name: nmap-logs
-            mountPath: /opt/corda/logs
-          - name: pkitool-certs-keys
-            mountPath: /opt/corda/DATA
-          resources:
-            requests:
-              memory: {{ .Values.cordaJarMx }}G
-            limits:
-              memory: {{ add .Values.cordaJarMx 2 }}G
-        - name: logs
-          image: "{{ required "nmap[logs]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "nmap[logs]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
-          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
-          command: ["/bin/bash", "-c"]
-          args:
-          - |-
-            cd /opt/corda/
-            while true; do tail -f logs/network-map/*.log 2>/dev/null; sleep 5; done
-            # in case sth went wrong just wait indefinitely ...
-            tail -f /dev/null
-          volumeMounts:
-          - name: nmap-logs
-            mountPath: /opt/corda/logs
+          - name: main
+            image: "{{ required "nmap[main]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "nmap[main]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+            env:
+              - name: ACCEPT_LICENSE
+                value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
+            imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+            command: ["/bin/bash", "-c"]
+            args:
+              - |-
+                cp -r CM-FILES/*.sh bin/
+                # cp -r nodeinfo/network-parameters-initial.conf etc/network-parameters-initial.conf
+                chmod +x bin/*
+                bin/run.sh
+            volumeMounts:
+              - name: nmap-conf
+                mountPath: /opt/corda/CM-FILES/nmap.conf
+                subPath: nmap.conf
+              - name: nmap-conf
+                mountPath: /opt/corda/CM-FILES/run.sh
+                subPath: run.sh
+              - name: notary-nodeinfo
+                mountPath: /opt/corda/notary-nodeinfo
+              - name: nmap-h2
+                mountPath: /opt/corda/h2
+              - name: nmap-etc
+                mountPath: /opt/corda/etc
+              - name: nmap-logs
+                mountPath: /opt/corda/logs
+              - name: pkitool-certs-keys
+                mountPath: /opt/corda/DATA
+            resources:
+              requests:
+                memory: {{ .Values.cordaJarMx }}G
+              limits:
+                memory: {{ add .Values.cordaJarMx 2 }}G
+            - name: logs
+            image: "{{ required "nmap[logs]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "nmap[logs]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+            env:
+              - name: ACCEPT_LICENSE
+                value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
+            imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+            command: ["/bin/bash", "-c"]
+            args:
+              - |-
+                cd /opt/corda/
+                while true; do tail -f logs/network-map/*.log 2>/dev/null; sleep 5; done
+                # in case sth went wrong just wait indefinitely ...
+                tail -f /dev/null
+            volumeMounts:
+              - name: nmap-logs
+                mountPath: /opt/corda/logs
       imagePullSecrets:
-      - name: cenm-registry
+        - name: cenm-registry
       volumes:
         - name: pkitool-certs-keys
           persistentVolumeClaim:
@@ -127,8 +133,5 @@ spec:
           persistentVolumeClaim:
             claimName: notary-nodeinfo
         - name: nmap-conf
-          configMap:
-            name: nmap-conf-{{ $DATE }}
-        - name: example-network-parameters-update-conf
           configMap:
             name: nmap-conf-{{ $DATE }}

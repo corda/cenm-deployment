@@ -17,6 +17,10 @@ dockerImageSigner:
   tag: 1.2-zulu-openjdk8u242
   pullPolicy: Always
 
+# required parameter
+acceptLicense:
+
+
 service:
   type: LoadBalancer
   port: 20003
