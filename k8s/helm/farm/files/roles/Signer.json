@@ -1,0 +1,24 @@
+{ 
+    "name": "Signer", 
+    "description": "Allows signing everything", 
+    "groups": [ 
+        { "entityName": "signers", "objectName": "global" },
+        { "entityName": "signers", "objectName": "1" }
+    ], 
+    "permissions": [
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetServicesAddresses" },
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetAllSigners" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetCsrs" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetCrrs" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetCrl" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetUnsignedNetworkMap" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetUnsignedNetworkParams" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetZoneMaterials" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/GetSubZoneMaterials" },
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/SignCsrs" },
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/SignCrl" },
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/SignNetworkMap" },
+         { "effect": "ALLOW", "permissionName": "CENM/Signer/SignNetworkParameters" }
+    ], 
+    "users": [] 
+}

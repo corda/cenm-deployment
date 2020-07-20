@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zone.fullname" . }}
+  labels:
+    {{- include "zone.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "zone.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "zone.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "zone.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: main
+          env:
+            - name: ACCEPT_LICENSE
+              value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cp CM-FILES/run.sh bin/run.sh
+            bash bin/run.sh
+            sleep 120
+          volumeMounts:
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+          - name: zone-conf
+            mountPath: /opt/cenm/CM-FILES/run.sh
+            subPath: run.sh
+          - name: zone-logs
+            mountPath: /opt/cenm/logs
+          - name: zone-h2
+            mountPath: /opt/cenm/h2
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.logsContainersEnabled }}
+        - name: logs-zone
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cd /opt/cenm/
+            while true; do tail -f logs/zone-service/*.log 2>/dev/null ; sleep 5; done
+            # in case sth went wrong just wait indefinitely ...
+            tail -f /dev/null
+          volumeMounts:
+          - name: zone-logs
+            mountPath: /opt/cenm/logs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end  }}
+      volumes:
+        - name: pki-certs-keys
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-pki-certs-keys
+        - name: zone-conf
+          configMap:
+            name: {{ .Values.prefix }}-zone-conf
+        - name: zone-h2
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-zone-h2
+        - name: zone-logs
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-zone-logs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

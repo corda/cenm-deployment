@@ -1,22 +1,19 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: notary-conf-{{ $DATE }}
+  name: {{ .Values.prefix }}-notary-conf
   labels:
-{{ include "notary.labels" . | indent 4 }}
+    {{ include "notary.labels" . | nindent 4 }}
 data:
   run.sh: |+
-{{ tpl (.Files.Get "files/run.sh") . | indent 4 }}
+    {{ tpl (.Files.Get "files/run.sh") . | nindent 4 }}
 
   notary-initial-registration.sh: |+
-{{ tpl (.Files.Get "files/notary-initial-registration.sh") . | indent 4 }}
+    {{ tpl (.Files.Get "files/notary-initial-registration.sh") . | nindent 4 }}
 
   create-network-parameters-file.sh: |+
-{{ tpl (.Files.Get "files/create-network-parameters-file.sh") . | indent 4 }}
+    {{ tpl (.Files.Get "files/create-network-parameters-file.sh") . | nindent 4 }}
 
   notary.conf: |+
-{{ tpl (.Files.Get "files/notary.conf") . | indent 4 }}
-
+    {{ tpl (.Files.Get "files/notary.conf") . | nindent 4 }}

@@ -5,7 +5,7 @@ pwd
 cat -n etc/notary.conf
 {{ end }}
 
-# we need just the filename without full path as this is going to be mounted under different folder in NM
+# we need just the filename without full path as this is going to be mounted under different directory in NM
 nodeInfoFile=$(basename $(ls additional-node-infos/nodeInfo*))
 export nodeInfoFile
 echo ${nodeInfoFile}
@@ -18,7 +18,7 @@ notaries : [
     validating = false
   }
 ]
-minimumPlatformVersion = 1
+minimumPlatformVersion = {{ .Values.mpv }}
 maxMessageSize = 10485760
 maxTransactionSize = 10485760
 eventHorizonDays = 1

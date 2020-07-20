@@ -1,0 +1,7 @@
+{
+    "admin": "false",
+    "autoEnroll": "true",
+    "description": "Read only access, locked down (members are guaranteed not to have modification rights)",
+    "name": "editors",
+    "users": [ "jenny-editor" ]
+}

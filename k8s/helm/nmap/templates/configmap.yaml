@@ -1,21 +1,22 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nmap-conf-{{ $DATE }}
+  name: {{ .Values.prefix }}-nmap-conf
   labels:
-{{ include "nmap.labels" . | indent 4 }}
+    {{ include "nmap.labels" . | nindent 4 }}
 data:
   run.sh: |+
-{{ tpl (.Files.Get "files/run.sh") . | indent 4 }}
+    {{ tpl (.Files.Get "files/run.sh") . | nindent 4 }}
+
+  getZoneToken.sh: |+
+    {{ tpl (.Files.Get "files/getZoneToken.sh") . | nindent 4 }}
 
   set-network-parameters.sh: |+
-{{ tpl (.Files.Get "files/set-network-parameters.sh") . | indent 4 }}
+    {{ tpl (.Files.Get "files/set-network-parameters.sh") . | nindent 4 }}
 
-  nmap.conf: |+
-{{ tpl (.Files.Get "files/nmap.conf") . | indent 4 }}
+  networkmap-init.conf: |+
+    {{ tpl (.Files.Get "files/networkmap-init.conf") . | nindent 4 }}
 
   network-parameters-update-example.conf: |+
-{{ tpl (.Files.Get "files/network-parameters-update-example.conf") . | indent 4 }}
+    {{ tpl (.Files.Get "files/network-parameters-update-example.conf") . | nindent 4 }}

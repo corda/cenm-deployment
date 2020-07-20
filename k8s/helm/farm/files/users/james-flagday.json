@@ -1,0 +1,8 @@
+{
+    "name": "james-flagday",
+    "email": "james.flagday@megacorp.com",
+    "password": "password",
+    "enabled": "true",
+    "groups": [ ],
+    "admin": "false"
+}

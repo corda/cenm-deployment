@@ -23,5 +23,4 @@ spec:
       name: ssh
   selector:
     app.kubernetes.io/name: notary
-    app.kubernetes.io/instance: notary
-{{ include "cenm.labels" . | indent 4 }}
+    app.kubernetes.io/instance: {{ .Values.prefix }}-notary

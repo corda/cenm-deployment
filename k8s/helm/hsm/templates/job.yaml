@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.prefix }}-hsm
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  template:
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: main
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.hsmImage.repository }}:{{ .Values.hsmImage.tag }}"
+          imagePullPolicy: {{ .Values.hsmImage.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+          - |-
+            cd /opt/cenm
+            cp -r {{ .Values.libFolder }}/* /opt/cenm/HSM
+            mkdir bin
+            cp CM-FILES/run.sh bin/run.sh
+            chmod +x bin/run.sh
+            bin/run.sh
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: hsm-libs
+            mountPath: /opt/cenm/HSM
+          - name: hsm-conf
+            mountPath: /opt/cenm/CM-FILES/run.sh
+            subPath: run.sh
+      restartPolicy: OnFailure
+      volumes:
+        - name: hsm-conf
+          configMap:
+            name: {{ .Values.prefix }}-hsm-conf
+        - name: hsm-libs
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-hsm-libs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

@@ -1,0 +1,8 @@
+{
+    "name": "jenny-editor",
+    "email": "jenny.editor@megacorp.com",
+    "password": "password",
+    "enabled": "true",
+    "groups": [ ],
+    "admin": "false"
+}

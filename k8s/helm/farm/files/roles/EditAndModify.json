@@ -1,0 +1,20 @@
+{ 
+    "name": "EditAndModify", 
+    "description": "Allows every Write or Modify permission", 
+    "groups": [ 
+        { "entityName": "editors", "objectName": "global" },
+        { "entityName": "editors", "objectName": "1" }
+    ], 
+    "permissions": [
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/CreateSubzone" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateSubzoneLabel" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateSignerConfig" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateSignerAddress" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateImConfig" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateImAddress" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateNmConfig" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateNmAddress" },
+        { "effect": "ALLOW", "permissionName": "CENM/Zone/UpdateNetworkParameters" }
+    ], 
+    "users": [] 
+}

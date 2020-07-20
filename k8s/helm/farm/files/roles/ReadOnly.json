@@ -1,0 +1,23 @@
+{ 
+    "name": "ReadOnly", 
+    "description": "Allows every Read-only permission", 
+    "groups": [ 
+        { "entityName": "readers", "objectName": "global" },
+        { "entityName": "readers-soft", "objectName": "global" },
+        { "entityName": "editors", "objectName": "global" } ,
+        { "entityName": "flagDayExecutors", "objectName": "global" },
+        { "entityName": "readers", "objectName": "1" },
+        { "entityName": "readers-soft", "objectName": "1" },
+        { "entityName": "editors", "objectName": "1" } ,
+        { "entityName": "flagDayExecutors", "objectName": "1" } 
+    ], 
+    "permissions": [
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetAllSubzones" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetSubzoneLabel" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetImConfig" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetNmConfig" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetNetworkParameters" }, 
+         { "effect": "ALLOW", "permissionName": "CENM/Zone/GetServicesAddresses" } 
+    ], 
+    "users": [] 
+}

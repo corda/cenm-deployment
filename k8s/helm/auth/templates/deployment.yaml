@@ -1,0 +1,160 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "auth.fullname" . }}
+  labels:
+    {{- include "auth.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "auth.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "auth.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "auth.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-waitforpki
+          env:
+            - name: ACCEPT_LICENSE
+              value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "auth[waitforpki]: missing value for .Values.authImage.repository" .Values.authImage.repository }}:{{ required "auth[waitforpki]: missing value for .Values.authImage.tag" .Values.authImage.tag }}"
+          imagePullPolicy: {{ .Values.authImage.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+          - |-
+            pwd
+            ls -alR
+            echo "Waiting for ./DATA/PKITOOL-DONE ..."
+            until [ -f ./DATA/PKITOOL-DONE ]
+            do
+              sleep 5
+            done
+            ls -al ./DATA/PKITOOL-DONE
+            echo "Waiting for ./DATA/PKITOOL-DONE ... done."
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+        - name: init-jwt
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.authImage.repository }}:{{ .Values.authImage.tag }}"
+          imagePullPolicy: {{ .Values.authImage.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+          - |-
+            keytool -genkeypair -alias oauth-test-jwt -keyalg RSA -keypass password -keystore etc/jwt-store.jks -storepass password -dname "CN=abc1, OU=abc2, O=abc3, L=abc4, ST=abc5, C=abc6"
+            ls -alR
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: auth-etc
+            mountPath: /opt/cenm/etc
+      containers:
+        - name: main
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.authImage.repository }}:{{ .Values.authImage.tag }}"
+          imagePullPolicy: {{ .Values.authImage.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+          - |-
+            pwd
+            ls -alR
+            cat -n authservice.conf
+            ./run.sh
+          volumeMounts:
+          - name: auth-conf
+            mountPath: /opt/cenm/authservice.conf
+            subPath: authservice.conf
+          - name: auth-conf
+            mountPath: /opt/cenm/run.sh
+            subPath: run.sh
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+          - name: auth-etc
+            mountPath: /opt/cenm/etc
+          - name: auth-h2
+            mountPath: /opt/cenm/h2
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end  }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end  }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.logsContainersEnabled }}
+        - name: logs-auth
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "auth[logs]: missing value for .Values.authImage.repository" .Values.authImage.repository }}:{{ required "auth[logs]: missing value for .Values.authImage.tag" .Values.authImage.tag }}"
+          imagePullPolicy: {{ .Values.authImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cd /opt/cenm/
+            while true; do tail -f logs/accounts-service/*.log 2>/dev/null; sleep 5; done
+            # in case sth went wrong just wait indefinitely ...
+            tail -f /dev/null
+          volumeMounts:
+          - name: auth-logs
+            mountPath: /opt/cenm/logs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end  }}
+      volumes:
+        - name: pki-certs-keys
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-pki-certs-keys
+        - name: auth-conf
+          configMap:
+            name: {{ .Values.prefix }}-auth-conf
+            defaultMode: 0777
+        - name: auth-etc
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-auth-etc
+        - name: auth-h2
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-auth-h2
+        - name: auth-logs
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-auth-logs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

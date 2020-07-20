@@ -12,7 +12,4 @@ service:
 serviceRevocation:
   port: 5053
 
-shell:
-  sshdPort: 2222
-
 healthCheckNodePort: 0

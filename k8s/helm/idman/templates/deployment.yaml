@@ -1,146 +1,206 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "idman.fullname" . }}
   labels:
-{{ include "idman.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
+    {{- include "idman.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "idman.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
-{{ include "cenm.labels" . | indent 6 }}
+      {{- include "idman.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "idman.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-{{ include "cenm.labels" . | indent 8 }}
+        {{- include "idman.selectorLabels" . | nindent 8 }}
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-      initContainers:
-      - name: config
-        image: "{{ required "idman[config]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[config]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
-        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
-        env:
-          - name: ACCEPT_LICENSE
-            value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          cp CM/run.sh bin/
-          cp CM/idman.conf etc/
-          chmod +x bin/*
-        volumeMounts:
-        - name: idman-etc
-          mountPath: /opt/corda/etc
-        - name: idman-conf
-          mountPath: /opt/corda/CM/run.sh
-          subPath: run.sh
-        - name: idman-conf
-          mountPath: /opt/corda/CM/idman.conf
-          subPath: idman.conf
-        resources:
-          requests:
-            memory: {{ .Values.cordaJarMx }}G
-          limits:
-            memory: {{ add .Values.cordaJarMx 2 }}G
-      - name: waitforpki
-        image: "{{ required "idman[waitforpki]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[waitforpki]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
-        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
-        env:
-        - name: ACCEPT_LICENSE
-          value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          echo "Waiting for ./DATA/PKITOOL-DONE ..."
-          until [ -f ./DATA/PKITOOL-DONE ]
-          do
-            sleep 5
-          done
-          ls -al ./DATA/PKITOOL-DONE
-          echo "Waiting for ./DATA/PKITOOL-DONE ... done."
-        volumeMounts:
-        - name: pkitool-certs-keys
-          mountPath: /opt/corda/DATA
-        resources:
-          requests:
-            memory: {{ .Values.cordaJarMx }}G
-          limits:
-            memory: {{ add .Values.cordaJarMx 2 }}G
-      containers:
-      - name: main
-        image: "{{ required "idman[main]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[main]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
-        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
-        env:
-          - name: ACCEPT_LICENSE
-            value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          cp CM/run.sh bin/
-          chmod +x bin/*
-          bin/run.sh
-        volumeMounts:
-        - name: idman-etc
-          mountPath: /opt/corda/etc
-        - name: idman-conf
-          mountPath: /opt/corda/CM/run.sh
-          subPath: run.sh
-        - name: idman-conf
-          mountPath: /opt/corda/CM/idman.conf
-          subPath: idman.conf
-        - name: idman-logs
-          mountPath: /opt/corda/logs
-        - name: idman-h2
-          mountPath: /opt/corda/h2
-        - name: pkitool-certs-keys
-          mountPath: /opt/corda/DATA
-        resources:
-          requests:
-            memory: {{ .Values.cordaJarMx }}G
-          limits:
-            memory: {{ add .Values.cordaJarMx 2 }}G
-      - name: logs
-        image: "{{ required "idman[logs]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[logs]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
-        imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
-        env:
-        - name: ACCEPT_LICENSE
-          value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          cd /opt/corda
-          while true; do tail -f logs/identity-manager/*.log 2>/dev/null; sleep 5; done
-          # in case sth went wrong just wait indefinitely ...
-          tail -f /dev/null
-        volumeMounts:
-        - name: idman-logs
-          mountPath: /opt/corda/logs
+    {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-      - name: cenm-registry
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "idman.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-config
+          env:
+            - name: ACCEPT_LICENSE
+              value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "idman[config]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[config]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cp CM/*.sh bin/
+            cp CM/*.conf etc/
+            chmod +x bin/*
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: idman-etc
+            mountPath: /opt/cenm/etc
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/run.sh
+            subPath: run.sh
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/identitymanager-init.conf
+            subPath: identitymanager-init.conf
+        - name: init-waitforpki
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "idman[waitforpki]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[waitforpki]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            echo "Waiting for ./DATA/PKITOOL-DONE ..."
+            until [ -f ./DATA/PKITOOL-DONE ]
+            do
+              sleep 5
+            done
+            ls -al ./DATA/PKITOOL-DONE
+            echo "Waiting for ./DATA/PKITOOL-DONE ... done."
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+        - name: init-token
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "idman[cli]: missing value for .Values.dockerImageCli.name" .Values.dockerImageCli.name }}:{{ required "idman[cli]: missing value for .Values.dockerImageCli.tag" .Values.dockerImageCli.tag }}"
+          imagePullPolicy: {{ .Values.dockerImageCli.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            pwd
+            cp CM/*.sh bin/
+            chmod +x bin/*
+            ls -alR
+            bin/getZoneToken.sh
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: idman-etc
+            mountPath: /opt/cenm/etc
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/identitymanager-init.conf
+            subPath: identitymanager-init.conf
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/getZoneToken.sh
+            subPath: getZoneToken.sh
+      containers:
+        - name: main
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "idman[main]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[main]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cp CM/run.sh bin/
+            chmod +x bin/*
+            bin/run.sh
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end  }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end  }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: idman-etc
+            mountPath: /opt/cenm/etc
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/run.sh
+            subPath: run.sh
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/identitymanager-init.conf
+            subPath: identitymanager-init.conf
+          - name: idman-logs
+            mountPath: /opt/cenm/logs
+          - name: idman-h2
+            mountPath: /opt/cenm/h2
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+        {{- if .Values.logsContainersEnabled }}
+        - name: logs-idman
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "idman[logs]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[logs]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cd /opt/cenm/
+            while true; do tail -f logs/identity-manager/*.log 2>/dev/null; sleep 5; done
+            # in case sth went wrong just wait indefinitely ...
+            tail -f /dev/null
+          volumeMounts:
+          - name: idman-logs
+            mountPath: /opt/cenm/logs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: logs-angel
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "idman[logs]: missing value for .Values.dockerImage.name" .Values.dockerImage.name }}:{{ required "idman[logs]: missing value for .Values.dockerImage.tag" .Values.dockerImage.tag }}"
+          imagePullPolicy: {{ .Values.dockerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cd /opt/cenm/
+            while true; do tail -f logs/angel-service/*.log 2>/dev/null; sleep 5; done
+            # in case sth went wrong just wait indefinitely ...
+            tail -f /dev/null
+          volumeMounts:
+          - name: idman-logs
+            mountPath: /opt/cenm/logs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end  }}
       volumes:
         - name: idman-conf
           configMap:
-            name: idman-conf-{{ $DATE }}
+            name: {{ .Values.prefix }}-idman-conf
         - name: idman-etc
           persistentVolumeClaim:
-            claimName: idman-etc-{{ $DATE }}
+            claimName: {{ .Values.prefix }}-idman-etc
         - name: idman-h2
           persistentVolumeClaim:
-            claimName: idman-h2-{{ $DATE }}
+            claimName: {{ .Values.prefix }}-idman-h2
         - name: idman-logs
           persistentVolumeClaim:
-            claimName: idman-logs-{{ $DATE }}
-        - name: pkitool-certs-keys
+            claimName: {{ .Values.prefix }}-idman-logs
+        - name: pki-certs-keys
           persistentVolumeClaim:
-            claimName: pkitool-certs-keys
+            claimName: {{ .Values.prefix }}-pki-certs-keys
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

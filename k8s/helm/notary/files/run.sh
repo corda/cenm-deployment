@@ -17,7 +17,7 @@ then
     java -jar {{ .Values.jarPath }}/corda.jar -f {{ .Values.configPath }}/notary.conf
     EXIT_CODE=${?}
 else
-    echo "Missing notary jar file in {{ .Values.jarPath }} folder:"
+    echo "Missing notary jar file in {{ .Values.jarPath }} directory:"
     ls -al {{ .Values.jarPath }}
     EXIT_CODE=110
 fi

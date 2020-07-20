@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "farm.fullname" . }}
+  labels:
+    {{- include "farm.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook-weight: "0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "farm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "farm.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "farm.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-check-auth
+          env:
+            - name: ACCEPT_LICENSE
+              value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
+          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            echo Probing {{ .Values.prefix }}-auth port {{ .Values.authPort }}
+            until nc -w 5 -vz {{ .Values.prefix }}-auth {{ .Values.authPort }} > /dev/null 2>&1
+            do
+              echo "Connect to {{ .Values.prefix }}-auth port {{ .Values.authPort }} (tcp) failed: Connection refused"
+            done
+            echo "Connection {{ .Values.prefix }}-auth port {{ .Values.authPort }} successful"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      containers:
+        - name: main
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
+          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+          - |-
+            pwd
+            df -h
+            ls -alR
+            cat -n etc/farmservice.conf
+            ./bin/run.sh
+          volumeMounts:
+          - name: farm-conf
+            mountPath: /opt/cenm/etc/farmservice.conf
+            subPath: farmservice.conf
+          - name: farm-conf
+            mountPath: /opt/cenm/bin/run.sh
+            subPath: run.sh
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+          - name: farm-etc
+            mountPath: /opt/cenm/etc
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end  }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end  }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.logsContainersEnabled }}
+        - name: logs-farm
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "farm[logs]: missing value for .Values.farmImage.repository" .Values.farmImage.repository }}:{{ required "farm[logs]: missing value for .Values.farmImage.tag" .Values.farmImage.tag }}"
+          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cd /opt/cenm/
+            while true; do tail -f logs/farm-service/*.log 2>/dev/null; sleep 5; done
+            # in case sth went wrong just wait indefinitely ...
+            tail -f /dev/null
+          volumeMounts:
+          - name: farm-logs
+            mountPath: /opt/cenm/logs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end  }}
+      volumes:
+        - name: pki-certs-keys
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-pki-certs-keys
+        - name: farm-conf
+          configMap:
+            name: {{ .Values.prefix }}-farm-conf
+            defaultMode: 0777
+        - name: farm-etc
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-farm-etc
+        - name: farm-logs
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-farm-logs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

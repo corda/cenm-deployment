@@ -3,8 +3,7 @@ kind: Service
 metadata:
   name: {{ include "notary.fullname" . }}
   labels:
-{{ include "notary.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
+    {{- include "notary.labels" . | nindent 4 }}
 spec:
 # we need healthCheckNodePort set to get rid of logs pollution
 {{- if (.Values.healthCheckNodePort) }}
@@ -15,14 +14,9 @@ spec:
       targetPort: {{ .Values.p2pPort }}
       protocol: TCP
       name: http
-    # - port: {{ .Values.rpcSettingsAddressPort }} 
-    #   targetPort: {{ .Values.rpcSettingsAddressPort }}
-    #   protocol: TCP
-    #   name: rpc
     - port: {{ .Values.sshdPort }} 
       targetPort: {{ .Values.sshdPort }}
       protocol: TCP
       name: ssh
   selector:
-    app.kubernetes.io/name: {{ include "notary.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "notary.selectorLabels" . | nindent 4 }}

@@ -3,20 +3,19 @@ kind: Service
 metadata:
   name: {{ include "signer.fullname" . }}
   labels:
-{{ include "signer.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
+    {{- include "signer.labels" . | nindent 4 }}
 spec:
-# we need Local policy and healthCheckNodePort set to get rid of logs pollution
-{{- if (.Values.healthCheckNodePort) }}
+  {{- if .Values.healthCheckNodePort }}
   healthCheckNodePort: {{ .Values.healthCheckNodePort }}
-{{- end }}
-  externalTrafficPolicy: Local
-  type: {{ .Values.service.type }}
+  {{- end }}
+  {{- if .Values.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.externalTrafficPolicy }}
+  {{- end }}
+  type: {{ .Values.adminListener.type }}
   ports:
-    - port: {{ .Values.serviceSsh.port }}
-      targetPort: {{ .Values.serviceSsh.port }}
+    - port: {{ .Values.adminListener.port }}
+      targetPort: {{ .Values.adminListener.port }}
       protocol: TCP
-      name: ssh
+      name: adminlistener
   selector:
-    app.kubernetes.io/name: {{ include "signer.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "signer.selectorLabels" . | nindent 4 }}

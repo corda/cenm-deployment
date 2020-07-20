@@ -1,15 +1,16 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: idman-conf-{{ $DATE }}
+  name: {{ .Values.prefix }}-idman-conf
   labels:
-{{ include "idman.labels" . | indent 4 }}
+    {{ include "idman.labels" . | nindent 4 }}
 data:
   run.sh: |+
-{{ tpl (.Files.Get "files/run.sh") . | indent 4 }}
+    {{ tpl (.Files.Get "files/run.sh") . | nindent 4 }}
 
-  idman.conf: |+
-{{ tpl (.Files.Get "files/idman.conf") . | indent 4 }}
+  getZoneToken.sh: |+
+    {{ tpl (.Files.Get "files/getZoneToken.sh") . | nindent 4 }}
+
+  identitymanager-init.conf: |+
+    {{ tpl (.Files.Get "files/identitymanager-init.conf") . | nindent 4 }}

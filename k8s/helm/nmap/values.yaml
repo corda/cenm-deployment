@@ -1,18 +1,123 @@
-# Default values for nmap.
+########################################
+###    CENM configuration options    ###
+########################################
+
+# Display more messages while executing Kubernetes deployment
+bashDebug: false
+
+# Volume size for etc/ directory
+volumeSizeNmapEtc: 1Gi
+
+# Volume size for logs/ directory
+volumeSizeNmapLogs: 10Gi
+
+# Volume size for h2/ directory
+volumeSizeNmapH2: 10Gi
+
+# Docker images to use for the Network Map Service Helm chart
+dockerImage:
+  repository: corda/enterprise-networkmap
+  tag: 1.3-zulu-openjdk8u242
+  pullPolicy: Always
+
+dockerImageCli:
+  repository: corda/enterprise-cli
+  tag: 1.3-zulu-openjdk8u242
+  pullPolicy: Always
+
+# Required parameter
+acceptLicense:
+
+nmapJar:
+  # Value for java -Xmx memory settings
+  xmx: 1G
+  # The directory where the Network Map Service .jar file is stored
+  path: bin
+  # The directory where the Network Map Service configuration is stored
+  configPath: etc
+
+# Configuration for database
+database:
+  driverClassName: "org.h2.Driver"
+  jdbcDriver: ""
+  url: "jdbc:h2:file:./h2/networkmap-persistence;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=0;AUTO_SERVER_PORT=0"
+  user: "example-db-user"
+  password: "example-db-password"
+  runMigration: true
+
+checkRevocation: true
+
+# Sleep time (in seconds) after an error occured
+sleepTimeAfterError: 120
+
+# Port for Auth Service
+authPort: 8081
+
+# Path and password to access file required for the Angel Service
+networkRootTruststore:
+  path: DATA/trust-stores/network-root-truststore.jks
+  password: trust-store-password
+
+# Path and password to access file required for the Angel Service
+rootAlias: cordarootca
+
+# Enable container displaying live logs
+logsContainersEnabled: true
+
+########################################
+###   Kubernetes related settings    ###
+########################################
+
+# Name of Kubernetes secret storing credentials to Docker registry
+imagePullSecrets:
+  - name: cenm-registry
 
 nameOverride: ""
 fullnameOverride: ""
 
-bashDebug: false
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
 
-dockerImage:
-  name: corda/enterprise-networkmap
-  tag: 1.2-zulu-openjdk8u242
-  pullPolicy: Always
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
-# required parameter
-acceptLicense:
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
 
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+  #   cpu: 100m
+    memory: 1Gi
+  requests:
+  #   cpu: 100m
+    memory: 1Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+storageClass: cenm
+
+healthCheckNodePort: 0
 
 service:
   type: LoadBalancer
@@ -22,26 +127,6 @@ serviceInternal:
   type: LoadBalancer
   port: 5050
 
-shell:
-  sshdPort: 2222
-  user: nmap
-  password: nmapP
-
-# where is CENM service jar file stored
-jarPath: bin
-
-# where is CENM service configuration file stored
-configPath: etc
-
-database:
-  driverClassName: "org.h2.Driver"
-  url: "jdbc:h2:file:./h2/networkmap-persistence;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=0;AUTO_SERVER_PORT=0"
-  user: "example-db-user"
-  password: "example-db-password"
-  runMigration: true
-
-checkRevocation: true
-
 identityManager:
   host: idman-internal
   port: 5052
@@ -49,9 +134,26 @@ identityManager:
 revocation:
   port: 5053
 
-sleepTimeAfterError: 120
-sleepTime: 0
+## Liveness and readiness probes values
+## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+##
+livenessProbe:
+  enabled: false
+  failureThreshold: 3
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+readinessProbe:
+  enabled: false
+  failureThreshold: 3
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
 
-cordaJarMx: 1
+adminListener:
+  type: ClusterIP
+  port: 6000
 
-healthCheckNodePort: 0
+externalTrafficPolicy:

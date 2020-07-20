@@ -6,37 +6,46 @@ set -x
 #
 # main run
 #
-if [ -f {{ .Values.jarPath }}/identitymanager.jar ]
+if [ -f {{ .Values.idmanJar.path }}/identitymanager.jar ]
 then
 {{ if eq .Values.bashDebug true }}
-    sha256sum {{ .Values.jarPath }}/identitymanager.jar 
-    cat etc/idman.conf
+    sha256sum {{ .Values.idmanJar.path }}/identitymanager.jar 
+    cat {{ .Values.idmanJar.configPath }}/identitymanager.conf
 {{ end }}
     echo
     echo "CENM: starting Identity Manager process ..."
     echo
-    java -Xmx{{ .Values.cordaJarMx }}G -jar {{ .Values.jarPath }}/identitymanager.jar -f {{ .Values.configPath }}/idman.conf
+    TOKEN=$(cat {{ .Values.idmanJar.configPath }}/token)
+    ls -alR
+    java -jar {{ .Values.idmanJar.path }}/angel.jar \
+    --jar-name={{ .Values.idmanJar.path }}/identitymanager.jar \
+    --zone-host={{ .Values.prefix }}-zone \
+    --zone-port=25000 \
+    --token=${TOKEN} \
+    --service=IDENTITY_MANAGER \
+    --working-dir=etc/ \
+    --polling-interval=10 \
+    --tls=true \
+    --tls-keystore=/opt/cenm/DATA/key-stores/corda-ssl-identity-manager-keys.jks \
+    --tls-keystore-password=password \
+    --tls-truststore=/opt/cenm/DATA/trust-stores/corda-ssl-trust-store.jks \
+    --tls-truststore-password=trust-store-password \
+    --verbose
     EXIT_CODE=${?}
 else
-    echo "Missing Identity Manager jar file in {{ .Values.jarPath }} folder:"
-    ls -al {{ .Values.jarPath }}
+    echo "Missing Identity Manager jar file in {{ .Values.idmanJar.path }} directory:"
+    ls -al {{ .Values.idmanJar.path }}
     EXIT_CODE=110
 fi
 
 if [ "${EXIT_CODE}" -ne "0" ]
 then
-    HOW_LONG={{ .Values.sleepTimeAfterError }}
     echo
-    echo "Notary initial registration failed - exit code: ${EXIT_CODE} (error)"
+    echo "Identity manager failed - exit code: ${EXIT_CODE} (error)"
     echo
-    echo "Going to sleep for requested ${HOW_LONG} seconds to let you login and investigate."
+    echo "Going to sleep for the requested {{ .Values.sleepTimeAfterError }} seconds to let you log in and investigate."
     echo
-else
-    HOW_LONG={{ .Values.sleepTime }}
-    echo
-    echo "Notary initial registration: no errors - sleeping for requested ${HOW_LONG} seconds before disappearing."
-    echo
+    sleep {{ .Values.sleepTimeAfterError }}
 fi
 
-sleep ${HOW_LONG}
 echo

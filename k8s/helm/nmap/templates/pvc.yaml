@@ -1,16 +1,12 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
-
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nmap-bin-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-nmap-bin
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
       storage: 2Gi
@@ -19,43 +15,37 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nmap-etc-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-nmap-etc
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 1Mi
+      storage: {{ .Values.volumeSizeNmapEtc }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nmap-logs-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-nmap-logs
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 10Gi
+      storage: {{ .Values.volumeSizeNmapLogs }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nmap-h2-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-nmap-h2
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 10Gi
+      storage: {{ .Values.volumeSizeNmapH2 }}

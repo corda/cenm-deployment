@@ -5,11 +5,13 @@ set -ef -o pipefail
 print_help () {
 cat << EOF
 Usage: ${0##*/} ...
-    -h                 display help and exit
-    -i|--idman  [name] provide idman  kubernetes service name
-    -n|--notary [name] provide notary kubernetes service name
-    --ACCEPT_LICENSE [YES] agree to the Licenses for Components deployed by the Bootstrapper.
-    -a|--auto          complete script without further prompts to the user
+    -h                          display help and exit
+    -i|--idman  [name]          provide idman  kubernetes service name
+    -n|--notary [name]          provide notary kubernetes service name
+    -p|--prefix [prefix]        specify release prefix for all Helm charts
+    -m|--mpv [version]          the minimum platform version for your network
+    --ACCEPT_LICENSE [YES]      agree to the Licenses for Components deployed by the Bootstrapper.
+    -a|--auto                   complete script without further prompts to the user
 EOF
 }
 
@@ -30,6 +32,16 @@ do
             shift
             shift
             ;;
+        -p|--prefix)
+            PrefixVar="${2}"
+            shift
+            shift
+            ;;
+        -m|--mpv)
+          minimumPV="${2}"
+          shift
+          shift
+          ;;
         -a|--auto)
             auto=True
             shift
@@ -48,23 +60,29 @@ done
 
 if [ "${acceptLicense}" != "Y" ] && [ "${acceptLicense}" != "YES"  ]
 then
-echo "CORDA ENTERPRISE NETWORK MANAGER – SOFTWARE EVALUATION LICENSE AGREEMENT must be accepted before CORDA ENTERPRISE NETWORK MANAGER can start.
-CORDA ENTERPRISE NETWORK MANAGER may be used for evaluation purposes for 90 days pursuant to the Software Evaluation License Agreement.
-Any use beyond this (e.g. in production deployments) requires a commercial license. Please contact sales@r3.com for more information.
+cat <<- EOF
+    CORDA ENTERPRISE NETWORK MANAGER – SOFTWARE EVALUATION LICENSE AGREEMENT must be accepted before CORDA ENTERPRISE NETWORK MANAGER can start.
+    CORDA ENTERPRISE NETWORK MANAGER may be used for evaluation purposes for 90 days pursuant to the Software Evaluation License Agreement.
+    Any use beyond this (e.g. in production deployments) requires a commercial license. Please contact sales@r3.com for more information.
 
-The Software Evaluation License Agreement for this product can be viewed from https://www.r3.com/corda-enterprise-network-manager-evaluation-license
-You can accept the Software Evaluation License Agreement by setting the --ACCEPT_LICENSE flag to \"Y\", \"--ACCEPT_LICENSE Y\"" >&2
-  exit 1
+    The Software Evaluation License Agreement for this product can be viewed from https://www.r3.com/corda-enterprise-network-manager-evaluation-license
+    You can accept the Software Evaluation License Agreement by setting the --ACCEPT_LICENSE flag to "Y", "--ACCEPT_LICENSE Y"
+EOF
+    exit 1
 else
-  echo "CORDA ENTERPRISE NETWORK MANAGER – SOFTWARE EVALUATION LICENSE AGREEMENT has been accepted, CORDA ENTERPRISE NETWORK MANAGER will now continue.
-The Software Evaluation License Agreement for this product can be viewed from https://www.r3.com/corda-enterprise-network-manager-evaluation-license.
-A copy of the Software Evaluation License Agreement also exists within the /license directory in the container."
+cat <<- EOF
+    CORDA ENTERPRISE NETWORK MANAGER – SOFTWARE EVALUATION LICENSE AGREEMENT has been accepted, CORDA ENTERPRISE NETWORK MANAGER will now continue.
+    The Software Evaluation License Agreement for this product can be viewed from https://www.r3.com/corda-enterprise-network-manager-evaluation-license.
+    A copy of the Software Evaluation License Agreement also exists within the /license directory in the container."
+EOF
 fi
 
+releasePrefix=${PrefixVar:-cenm}
 
 printf "\nYour current kubectl context:\n\n"
 printf "kubectl config context: %s\n" "$(kubectl config current-context)"
 printf "             namespace: %s\n" "$(kubectl config view --minify --output 'jsonpath={..namespace}')"
+printf "   Helm release prefix: %s\n" "${releasePrefix}"
 if [ -z "${auto}" ]
 then
     printf "\nDo you want to continue ? (y/n) "
@@ -83,27 +101,37 @@ announce () {
 startTime=${SECONDS}
 
 #
-# the very first steps are to (optionally) trigger public IP allocation for idman and notary as this is what is the most time consuming
+# The purpose of the very first steps below is to trigger public IP allocation for the Identity Manager Service and the Notary.
+# PKI Tool needs to know public IP address of Identity Manager beforehand.
 #
+
+if [ -z "${minimumPV}" ]
+then
+    minimumPV=4
+fi
+
+if [ ${minimumPV} -gt 4 ]
+then
+    printf "[ERROR] No such Corda Platform version as %s\n\n" ${minimumPV}
+    exit
+fi
 
 if [ -z "${idmanServiceName}" ]
 then
     idmanServiceAllocate=true
-    idmanServiceName=idman-ip
-    # trigger public IP allocation for idman
+    idmanServiceName="${releasePrefix}"-idman-ip
     announce "Triggering public IP allocation for Identity Manager"
-    printf "COMMAND: helm install idman-ip idman-ip\n\n"
-    helm install idman-ip idman-ip
+    printf "COMMAND: helm install %s-idman-ip idman-ip --set prefix=%s\n\n" "${releasePrefix}" "${releasePrefix}"
+    helm install "${releasePrefix}"-idman-ip idman-ip --set prefix="${releasePrefix}"
 fi
 
 if [ -z "${notaryServiceName}" ]
 then
     notaryServiceAllocate=true
-    notaryServiceName=notary-ip
-    # trigger public IP allocation for notary
+    notaryServiceName="${releasePrefix}"-notary-ip
     announce "Triggering public IP allocation for Notary"
-    printf "COMMAND: helm install notary-ip notary-ip\n\n"
-    helm install notary-ip notary-ip
+    printf "COMMAND: helm install %s-notary-ip notary-ip --set prefix=%s\n\n" "${releasePrefix}" "${releasePrefix}"
+    helm install "${releasePrefix}"-notary-ip notary-ip --set prefix="${releasePrefix}"
 fi
 
 if [ "${idmanServiceAllocate}" == "true" ]
@@ -116,7 +144,7 @@ fi
 
 while [ -z "${idmanPublicIP}" ]
 do
-    idmanPublicIP=$(kubectl get svc ${idmanServiceName} --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    idmanPublicIP=$(kubectl get svc "${idmanServiceName}" --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
     # if idmanPublicIP has some value don't print anything on the screen
     if [ -z "${idmanPublicIP}" ]
     then
@@ -133,25 +161,45 @@ then
     printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
 fi
 
-announce "Creating Signer"
-printf "COMMAND: helm install signer signer --set idmanPublicIP=%s\n\n" "${idmanPublicIP}"
-helm install signer signer --set idmanPublicIP="${idmanPublicIP}" --set acceptLicense="${acceptLicense}"
+announce "Triggering HSM image"
+printf "COMMAND: helm install %s-hsm hsm --set prefix=%s\n\n" "${releasePrefix}" "${releasePrefix}"
+helm install "${releasePrefix}"-hsm hsm --set prefix="${releasePrefix}"
 
-announce "Creating IdMan"
-printf "COMMAND: helm install idman idman\n\n"
-helm install idman idman --set acceptLicense="${acceptLicense}"
+announce "Triggering PKI Tool"
+printf "COMMAND: helm install %s-pki pki --set idmanPublicIP=%s --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${idmanPublicIP}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-pki pki --set idmanPublicIP="${idmanPublicIP}" --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}" --set hsm="${hsm}"
+
+announce "Bootstrapping CENM Auth service"
+printf "COMMAND: helm install %s-auth auth --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-auth auth --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
+
+announce "Bootstrapping CENM Farm service"
+printf "COMMAND: helm install %s-farm farm --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-farm farm --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
+
+announce "Bootstrapping CENM Zone service"
+printf "COMMAND: helm install %s-zone zone --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-zone zone --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
+
+announce "Bootstrapping CENM Signer service"
+printf "COMMAND: helm install %s-signer signer --set idmanPublicIP=%s --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${idmanPublicIP}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-signer signer --set idmanPublicIP="${idmanPublicIP}" --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}" --set hsm="${hsm}"
+
+announce "Bootstrapping CENM Identity Manager service"
+printf "COMMAND: helm install %s-idman idman --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-idman idman --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
 
 if [ "${notaryServiceAllocate}" == "true" ]
 then
     announce "Waiting until cloud provider has allocated public IP for Notary (it may take a few minutes)"
     notaryStartTime=${SECONDS}
-else
+else    
     announce "Checking public IP allocated for Notary"
-fi
+fi    
 
 while [ -z "${notaryPublicIP}" ]
 do
-    notaryPublicIP=$(kubectl get svc ${notaryServiceName} --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    notaryPublicIP=$(kubectl get svc "${notaryServiceName}" --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
     # if notaryPublicIP has some value don't print anything on the screen
     if [ -z "${notaryPublicIP}" ]
     then
@@ -168,37 +216,37 @@ then
     printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
 fi
 
-announce "Creating Notary"
-printf "COMMAND: helm install notary notary --set notaryPublicIP=%s\n\n" "${notaryPublicIP}"
-helm install notary notary --set notaryPublicIP="${notaryPublicIP}" --set acceptLicense="${acceptLicense}"
+announce "Bootstrapping Notary service"
+printf "COMMAND: helm install %s-notary notary --set notaryPublicIP=%s --set prefix=%s --set mpv=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${notaryPublicIP}" "${releasePrefix}" "${minimumPV}" "${acceptLicense}"
+helm install "${releasePrefix}"-notary notary --set notaryPublicIP="${notaryPublicIP}" --set prefix="${releasePrefix}" --set mpv="${minimumPV}" --set acceptLicense="${acceptLicense}"
 
-announce "Creating NetworkMap"
-printf "COMMAND: helm install nmap nmap\n\n"
-helm install nmap nmap --set acceptLicense="${acceptLicense}"
+announce "Bootstrapping CENM Network Map service"
+printf "COMMAND: helm install %s-nmap nmap --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}" 
+helm install "${releasePrefix}"-nmap nmap --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
 
-announce "Waiting until cloud provider has allocated public IP for Signer (it may take a few minutes)"
-signerStartTime=${SECONDS}
-while [ -z "${signerPublicIP}" ]
+announce "Waiting until cloud provider has allocated public IP for CLI endpoint (it may take a few minutes)"
+farmStartTime=${SECONDS}
+while [ -z "${farmPublicIP}" ]
 do
-    signerPublicIP=$(kubectl get svc signer --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
-    # if notaryPublicIP has some value don't print anything on the screen
-    if [ -z "${signerPublicIP}" ]
+    farmPublicIP=$(kubectl get svc "${releasePrefix}"-farm --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    # if farmPublicIP has some value don't print anything on the screen
+    if [ -z "${farmPublicIP}" ]
     then
         printf "."
         sleep 5
     else
-        printf "\nsignerPublicIP = %s\n" "${signerPublicIP}"
+        printf "\nfarmPublicIP = %s\n" "${farmPublicIP}"
     fi
 done
 
-elapsedTime=$((SECONDS - signerStartTime))
+elapsedTime=$((SECONDS - farmStartTime))
 printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
 
 announce "Waiting until cloud provider has allocated public IP for Network Map (it may take a few minutes)"
 nmapStartTime=${SECONDS}
 while [ -z "${nmapPublicIP}" ]
 do
-    nmapPublicIP=$(kubectl get svc nmap --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    nmapPublicIP=$(kubectl get svc "${releasePrefix}"-nmap --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
     # if notaryPublicIP has some value don't print anything on the screen
     if [ -z "${nmapPublicIP}" ]
     then
@@ -217,14 +265,12 @@ printf "\n\nOverall elapsed time: %s seconds (~ %s minutes)\n\n" "${elapsedTime}
 
 printf "\n\nPlease wait until all components have finished bootstrapping - use 'kubectl get pods -o wide' to monitor progress.\n"
 
-printf "\n\nHow to ssh to each CENM component (using default helm values taken from <helm-chart>/values.yaml):\n"
-printf "ssh -p 2222 -l idman  %s\n" "${idmanPublicIP}"
-printf "ssh -p 2222 -l signer %s\n" "${signerPublicIP}"
-printf "ssh -p 2222 -l notary %s\n" "${notaryPublicIP}"
-printf "ssh -p 2222 -l nmap   %s\n" "${nmapPublicIP}"
+farmPort=$(kubectl get svc "${releasePrefix}"-farm -o=jsonpath="{.spec.ports[0].port}")
+printf "\n\nCENM endpoint to connect using CENM CLI tool: "
+printf "%s:%s\n" "${farmPublicIP}" "${farmPort}"
 
-idmanPort=$(kubectl get svc idman-ip -o=jsonpath="{.spec.ports[0].port}")
-nmapPort=$(kubectl get svc nmap -o=jsonpath="{.spec.ports[0].port}")
+idmanPort=$(kubectl get svc "${releasePrefix}"-idman-ip -o=jsonpath="{.spec.ports[0].port}")
+nmapPort=$(kubectl get svc "${releasePrefix}"-nmap -o=jsonpath="{.spec.ports[0].port}")
 
 printf "\nPlease use this snippet in your node.conf to register Corda nodes:\n"
 printf "\nnetworkServices {\n"

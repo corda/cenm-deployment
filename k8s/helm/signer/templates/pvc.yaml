@@ -1,55 +1,25 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.prefix }}-signer-etc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.volumeSizeSignerEtc }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pkitool-certs-keys
-  labels:
-{{ include "signer.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-signer-logs
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 1Gi
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pkitool-signer-etc-{{ $DATE }}
-  labels:
-{{ include "signer.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: cenm
-  resources:
-    requests:
-      storage: 1Mi
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: signer-logs-{{ $DATE }}
-  labels:
-{{ include "signer.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: cenm
-  resources:
-    requests:
-      storage: 10Gi
+      storage: {{ .Values.volumeSizeSignerLogs }}

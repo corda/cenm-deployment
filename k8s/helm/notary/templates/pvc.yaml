@@ -1,91 +1,77 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.prefix }}-notary-bin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.volumeSizeNotaryBin }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: notary-bin-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-notary-etc
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 2Gi
+      storage: {{ .Values.volumeSizeNotaryEtc }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: notary-etc-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-notary-nodeinfo
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 1Mi
+      storage: {{ .Values.volumeSizeNotaryNodeinfo }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: notary-nodeinfo
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-notary-certificates
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 1Mi
+      storage: {{ .Values.volumeSizeNotaryCertificate }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: notary-certificates-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-notary-logs
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 5Mi
+      storage: {{ .Values.volumeSizeNotaryLogs }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: notary-logs-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
+  name: {{ .Values.prefix }}-notary-h2
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: cenm
+  storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: 5Mi
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: notary-h2-{{ $DATE }}
-  annotations:
-    volume.beta.kubernetes.io/storage-class: cenm
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: cenm
-  resources:
-    requests:
-      storage: 20Mi
+      storage: {{ .Values.volumeSizeNotaryH2 }}

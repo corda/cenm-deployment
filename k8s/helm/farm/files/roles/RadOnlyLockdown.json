@@ -1,0 +1,22 @@
+{
+    "name": "RadOnlyLockdown",
+    "description": "Locks out all non-read permissions via Deny",
+    "groups": [ 
+        { "entityName": "readers", "objectName": "global" },
+        { "entityName": "readers", "objectName": "1" }
+    ], 
+    "permissions": [
+        { "effect": "DENY", "permissionName": "CENM/NetworkMap/ExecuteNetworkParametersUpdate" },
+        { "effect": "DENY", "permissionName": "CENM/NetworkMap/AdvertiseNetworkParametersUpdate" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/CreateSubzone" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateSubzoneLabel" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateSignerConfig" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateSignerAddress" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateImConfig" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateImAddress" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateNmConfig" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateNmAddress" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateNetworkParameters" }
+    ],
+    "users": []
+}

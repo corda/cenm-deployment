@@ -35,25 +35,29 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "signer.labels" -}}
-app.kubernetes.io/name: {{ include "signer.name" . }}
 helm.sh/chart: {{ include "signer.chart" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "signer.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{/*
-CENM labels
+Selector labels
 */}}
-{{- define "cenm.labels" -}}
-app.kubernetes.io/part-of: cenm
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
+{{- define "signer.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "signer.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-Date/time in formt: YYYY-MM-DD-HH-MM-SS
+Create the name of the service account to use
 */}}
-{{- define "currentDateTime" -}}
-{{- printf "%s" ( now | date "2006-01-02-15-04-05" ) -}}
+{{- define "signer.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+    {{ default (include "signer.fullname" .) .Values.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccount.name }}
+{{- end -}}
 {{- end -}}

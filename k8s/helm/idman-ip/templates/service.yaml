@@ -17,12 +17,7 @@ spec:
       targetPort: {{ .Values.service.port }}
       protocol: TCP
       name: main
-    - port: {{ .Values.shell.sshdPort }}
-      targetPort: {{ .Values.shell.sshdPort }}
-      protocol: TCP
-      name: ssh
   selector:
     app.kubernetes.io/name: idman
-    app.kubernetes.io/instance: idman
-{{ include "cenm.labels" . | indent 4 }}
+    app.kubernetes.io/instance: {{ .Values.prefix }}-idman
 

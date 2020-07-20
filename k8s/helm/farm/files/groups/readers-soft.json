@@ -1,0 +1,7 @@
+{
+    "admin": "false",
+    "autoEnroll": "true",
+    "description": "Read only access, NOT locked down (members can gain modification rights via other groups)",
+    "name": "readers-soft",
+    "users": [ "jenny-editor", "james-flagday" ]
+}

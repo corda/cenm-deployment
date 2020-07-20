@@ -1,41 +1,67 @@
-# Default values for Notary service.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+########################################
+###    CENM configuration options    ###
+########################################
 
-nameOverride: ""
-fullnameOverride: ""
-
+# Display more messages while executing Kubernetes deployment 
 bashDebug: false
 
+# Docker images to use by the Notary Helm chart
 dockerImage:
-  name: corda/notary
-  tag: 1.2-zulu-openjdk8u242
+  name: corda/enterprise-notary
+  tag: 4.4-zulu-openjdk8u242
   pullPolicy: Always
 
-# required parameter
-acceptLicense:
+# Volume size for Notary bin/ directory
+volumeSizeNotaryBin: 2Gi
 
+# Volume size for Notary etc/ directory
+volumeSizeNotaryEtc: 10Mi
 
-service:
-  type: LoadBalancer
-  port: 20003
+# Volume size for Notary nodeinfo/ directory
+volumeSizeNotaryNodeinfo: 1Mi
 
-cordaJarMx: 3
-devMode: false
-sshdPort: 2222
+# Volume size for Notary certificate/ directory
+volumeSizeNotaryCertificate: 5Mi
+
+# Volume size for Notary logs/ directory
+volumeSizeNotaryLogs: 10Gi
+
+# Volume size for Notary h2/ directory
+volumeSizeNotaryH2: 10Gi
+
+# p2p port used to communicate with Corda nodes
 p2pPort: 10002
 
-rpcSettingsAddress: "0.0.0.0"
-rpcSettingsAddressPort: 10003
-rpcSettingsAdminAddress: "localhost"
-rpcSettingsAdminAddressPort: 10770
-rpcSettingsStandAloneBroker: false
-rpcSettingsUseSsl: false
+# Memory size allocated to the main Notary container (in GB)
+cordaJarMx: 3
 
+# devMode 
+devMode: false
+
+# ssh port for Notary
+sshdPort: 2222
+
+# Directory for the CENM service .jar file
+jarPath: bin
+
+# Directory for the CENM service configuration file(s)
+configPath: etc
+
+# Sleep time (in seconds) after an error occured
+sleepTimeAfterError: 120
+
+# URL where the network-root-truststore.jks is or would be available from
+jksSource: ""
+
+# Url for Identity Manager and Network Map services
 networkServices:
-  doormanURL: "http://idman-ip:10000"
-  networkMapURL: "http://nmap:10000"
+  doormanURL: idman-ip:10000
+  networkMapURL: nmap:10000
 
+# Minimum platform version
+mpv: 3
+
+# Database configuration
 dataSourceProperties:
   dataSource:
     password: "ziAscD0MJnj4n4xkFWY6XuMBuw9bvYC7"
@@ -43,25 +69,100 @@ dataSourceProperties:
     user: "sa"
   dataSourceClassName: "org.h2.jdbcx.JdbcDataSource"
 
+# Type of Notary
 notary:
   validating: false
-  
+
+# Public IP for Notary (required parameter)
+notaryPublicIP:
+
+# RPC setting for Notary
+rpcSettingsAddress: "0.0.0.0"
+rpcSettingsAddressPort: 10003
+rpcSettingsAdminAddress: "localhost"
+rpcSettingsAdminAddressPort: 10770
+rpcSettingsStandAloneBroker: false
+rpcSettingsUseSsl: false
+
+# Username/password for the built-in ssh service
 rpcUsers:
   username: notary
   password: notaryP
 
-# required parameter
-notaryPublicIP:
+########################################
+###   Kubernetes related settings    ###
+########################################
 
-sleepTimeAfterError: 120
-sleepTime: 0
+# Name of Kubernetes secret storing credentials to Docker registry
+imagePullSecrets:
+  - name: cenm-registry
 
-# where is CENM service jar file stored
-jarPath: bin
+nameOverride: ""
+fullnameOverride: ""
 
-# where is CENM service configuration file stored
-configPath: etc
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+  #   cpu: 100m
+    memory: 2Gi
+  requests:
+  #   cpu: 100m
+    memory: 2Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+## Liveness and readiness probe values
+## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+##
+livenessProbe:
+  enabled: false
+  failureThreshold: 5
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+readinessProbe:
+  enabled: false
+  failureThreshold: 5
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+
+storageClass: cenm
 
 healthCheckNodePort: 0
-
-jksSource: ""

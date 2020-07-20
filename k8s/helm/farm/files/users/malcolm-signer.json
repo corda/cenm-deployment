@@ -1,0 +1,8 @@
+{
+    "name": "malcolm-signer",
+    "email": "malcolm.signer@megacorp.com",
+    "password": "password",
+    "enabled": "true",
+    "groups": [ ],
+    "admin": "false"
+}

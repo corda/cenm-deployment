@@ -1,119 +1,153 @@
-{{- $DATE := ( include "currentDateTime" . ) }}
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "signer.fullname" . }}
   labels:
-{{ include "signer.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
+    {{- include "signer.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "signer.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
-{{ include "cenm.labels" . | indent 6 }}
+      {{- include "signer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "signer.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-{{ include "cenm.labels" . | indent 8 }}
+        {{- include "signer.selectorLabels" . | nindent 8 }}
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-      initContainers:
-      - name: pki
-        image: "{{ required "signer[pki]: missing value for .Values.dockerImagePki.name" .Values.dockerImagePki.name }}:{{ required "signer[pki]: missing value for .Values.dockerImagePki.tag" .Values.dockerImagePki.tag }}"
-        env:
-          - name: ACCEPT_LICENSE
-            value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        imagePullPolicy: {{ .Values.dockerImagePki.pullPolicy }}
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          cp CM-FILES/pki.conf etc/pki.conf
-          cp CM-FILES/signer.conf etc/signer.conf;
-          mkdir DATA/key-stores DATA/trust-stores DATA/crl-files
-          time java -Xmx{{ .Values.cordaJarMx }}G -jar {{ .Values.jarPath }}/pkitool.jar --config-file {{ .Values.configPath }}/pki.conf
-        volumeMounts:
-        - name: pkitool-certs-keys
-          mountPath: /opt/corda/DATA
-        - name: pkitool-signer-etc
-          mountPath: /opt/corda/etc
-        - name: pkitool-conf
-          mountPath: /opt/corda/CM-FILES/pki.conf
-          subPath: pki.conf
-        - name: signer-conf
-          mountPath: /opt/corda/CM-FILES/signer.conf
-          subPath: signer.conf
-        resources:
-          requests:
-            memory: {{ .Values.cordaJarMx }}G
-          limits:
-            memory: {{ add .Values.cordaJarMx 2 }}G
-      containers:
-      - name: main
-        image: "{{ required "signer[main]: missing value for .Values.dockerImageSigner.name" .Values.dockerImageSigner.name }}:{{ required "signer[main]: missing value for .Values.dockerImageSigner.tag" .Values.dockerImageSigner.tag }}"
-        env:
-          - name: ACCEPT_LICENSE
-            value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        imagePullPolicy: {{ .Values.dockerImageSigner.pullPolicy }}
-        lifecycle:
-          postStart:
-            exec:
-              command: ["/bin/sh", "-c", "touch DATA/PKITOOL-DONE"]
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          java -Xmx{{ .Values.cordaJarMx }}G -jar {{ .Values.jarPath }}/signer.jar --config-file {{ .Values.configPath }}/signer.conf
-        volumeMounts:
-        - name: pkitool-certs-keys
-          mountPath: /opt/corda/DATA
-        - name: pkitool-signer-etc
-          mountPath: /opt/corda/etc
-        - name: signer-logs
-          mountPath: /opt/corda/logs
-        resources:
-          requests:
-            memory: {{ .Values.cordaJarMx }}G
-          limits:
-            memory: {{ add .Values.cordaJarMx 2 }}G
-      - name: logs
-        image: "{{ required "signer[logs]: missing value for .Values.dockerImageSigner.name" .Values.dockerImageSigner.name }}:{{ required "signer[logs]: missing value for .Values.dockerImageSigner.tag" .Values.dockerImageSigner.tag }}"
-        env:
-        - name: ACCEPT_LICENSE
-          value: "{{required "You must accept the license agreement to run this software" .Values.acceptLicense }}"
-        imagePullPolicy: {{ .Values.dockerImageSigner.pullPolicy }}
-        command: ["/bin/bash", "-c"]
-        args:
-        - |-
-          cd /opt/corda/
-          while true; do tail -f logs/signing-service/*.log 2>/dev/null ; sleep 5; done
-          # in case sth went wrong just wait indefinitely ...
-          tail -f /dev/null
-        volumeMounts:
-        - name: signer-logs
-          mountPath: /opt/corda/logs
+    {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-      - name: cenm-registry
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "signer.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-token
+          env:
+            - name: ACCEPT_LICENSE
+              value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "signer[cli]: missing value for .Values.dockerImageCli.repository" .Values.dockerImageCli.repository }}:{{ required "signer[cli]: missing value for .Values.dockerImageCli.tag" .Values.dockerImageCli.tag }}"
+          imagePullPolicy: {{ .Values.dockerImageCli.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            [ ! -f etc/signer.conf ]       && cp CM/signer.conf       etc/
+            [ ! -f etc/signer-azure.conf ] && cp CM/signer-azure.conf etc/
+            cp CM/*.sh bin/
+            chmod +x bin/*
+            bin/getZoneToken.sh
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: signer-etc
+              mountPath: /opt/cenm/etc
+            - name: signer-conf
+              mountPath: /opt/cenm/CM/getZoneToken.sh
+              subPath: getZoneToken.sh
+            - name: signer-conf
+              mountPath: /opt/cenm/CM/signer.conf
+              subPath: signer.conf
+            - name: signer-conf
+              mountPath: /opt/cenm/CM/signer-azure.conf
+              subPath: signer-azure.conf
+      containers:
+        - name: main
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.signerImage.repository }}:{{ .Values.signerImage.tag }}"
+          imagePullPolicy: {{ .Values.signerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cp -p CM/*.sh bin/
+            chmod +x bin/*
+            bin/run.sh
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.adminListener.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end  }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.adminListener.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end  }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+          - name: hsm-libs
+            mountPath: /opt/cenm/HSM
+          - name: signer-etc
+            mountPath: /opt/cenm/etc
+          - name: signer-logs
+            mountPath: /opt/cenm/logs
+          - name: signer-conf
+            mountPath: /opt/cenm/CM/run.sh
+            subPath: run.sh
+          - name: signer-conf
+            mountPath: /opt/cenm/CM/signer.conf
+            subPath: signer.conf
+          - name: signer-conf
+            mountPath: /opt/cenm/CM/signer-azure.conf
+            subPath: signer-azure.conf
+          {{- if .Values.logsContainersEnabled }}
+        - name: logs-signer
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.signerImage.repository }}:{{ .Values.signerImage.tag }}"
+          imagePullPolicy: {{ .Values.signerImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cd /opt/cenm/
+            while true; do tail -f logs/signing-service/*.log 2>/dev/null ; sleep 5; done
+            # in case sth went wrong just wait indefinitely ...
+            tail -f /dev/null
+          volumeMounts:
+          - name: signer-logs
+            mountPath: /opt/cenm/logs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        {{- end  }}
       volumes:
-        - name: pkitool-conf
-          configMap:
-            name: pkitool-conf-{{ $DATE }}
-        - name: signer-conf
-          configMap:
-            name: cenm-conf-{{ $DATE }}
-        - name: pkitool-signer-etc
+        - name: pki-certs-keys
           persistentVolumeClaim:
-            claimName: pkitool-signer-etc-{{ $DATE }}
+            claimName: {{ .Values.prefix }}-pki-certs-keys
+        - name: hsm-libs
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-hsm-libs
+        - name: signer-etc
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-signer-etc
         - name: signer-logs
           persistentVolumeClaim:
-            claimName: signer-logs-{{ $DATE }}
-        - name: pkitool-certs-keys
-          persistentVolumeClaim:
-            claimName: pkitool-certs-keys
+            claimName: {{ .Values.prefix }}-signer-logs
+        - name: signer-conf
+          configMap:
+            name: {{ .Values.prefix }}-signer-conf
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

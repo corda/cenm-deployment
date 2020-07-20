@@ -1,0 +1,22 @@
+{ 
+    "name": "FlagDayExecute", 
+    "description": "Allows executing flag days, plus allows every Read-only permission", 
+    "groups": [ 
+        { "entityName": "flagDayExecutors", "objectName": "global" },
+        { "entityName": "flagDayExecutors", "objectName": "1" }
+    ], 
+    "permissions": [
+        { "effect": "ALLOW", "permissionName": "CENM/NetworkMap/ExecuteNetworkParametersUpdate" },
+        { "effect": "ALLOW", "permissionName": "CENM/NetworkMap/AdvertiseNetworkParametersUpdate" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/CreateSubzone" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateSubzoneLabel" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateSignerConfig" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateSignerAddress" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateImConfig" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateImAddress" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateNmConfig" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateNmAddress" },
+        { "effect": "DENY", "permissionName": "CENM/Zone/UpdateNetworkParameters" }
+    ], 
+    "users": [] 
+}

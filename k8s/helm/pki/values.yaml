@@ -1,0 +1,115 @@
+########################################
+###    CENM configuration options    ###
+########################################
+
+# Display more messages while executing Kubernetes deployment 
+bashDebug: true
+
+# Volume size for Certificates and Keys
+volumeSizePkiCertsKeys: 1Gi
+
+# Volume size for etc/ directory (where the pki.conf file is stored)
+volumeSizePkiEtc: 1Gi
+
+# Docker images to use by the PKI Helm chart
+pkiImage:
+  repository: corda/enterprise-pkitool
+  tag: 1.3-zulu-openjdk8u242
+  pullPolicy: Always
+
+pkiJar:
+  # value for Java -Xmx
+  xmx: 1G
+  # The directory where Signer jar is stored
+  path: bin
+  # The directory where the Signing Service configuration is stored
+  configPath: etc
+  # which config file to use
+  configFile: pki.conf
+
+
+# Parameters related to the PKI Tool configuration file
+pki:
+  keyStores:
+    keyVaultUrl: "https://vault.vault.azure.net"
+    credentials:
+      keyStorePassword: ""
+      keyStoreAlias: "1"
+      clientId: "abcdefgh-1234-5678-9012-123456789012"
+  certificates:
+    tlscrlsigner:
+      subject: "CN=Test TLS Signer Certificate, OU=HQ, O=HoldCo LLC, L=New York, C=US"
+      crl:
+        issuer: "CN=Corda TLS Signer Certificate, OU=Corda, O=R3 HoldCo LLC, L=New York, C=US"
+    cordarootca:
+      subject: "CN=Test Root CA Certificate, OU=HQ, O=HoldCo LLC, L=New York, C=US"
+    subordinateca:
+      subject: "CN=Test Subordinate CA Certificate, OU=HQ, O=HoldCo LLC, L=New York, C=US"
+    identitymanagerca:
+      subject: "CN=Test Identity Manager Service Certificate, OU=HQ, O=HoldCo LLC, L=New York, C=US"
+    networkmap:
+      subject: "CN=Test Network Map Service Certificate, OU=HQ, O=HoldCo LLC, L=New York, C=US"
+
+
+# Sleep time (in seconds) after an error occured
+sleepTimeAfterError: 300
+
+# Identity Manager Service port (encoded in certs)
+idmanPort: 10000
+
+
+########################################
+###   Kubernetes related settings    ###
+########################################
+
+# Name of Kubernetes secret storing credentials to Docker registry
+imagePullSecrets:
+  - name: cenm-registry
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+  #   cpu: 100m
+    memory: 1Gi
+  requests:
+  #   cpu: 100m
+    memory: 1Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# The number of retries before the PKI Job is considered as failed
+backoffLimit: 4
+
+storageClass: cenm

@@ -5,15 +5,18 @@ pwd
 cat -n etc/notary.conf
 {{ end }}
 
-#
-# wait for network-root-truststore.jks to be available
-#
 NETWORK_ROOT_TRUSTSTORE=DATA/trust-stores/network-root-truststore.jks
+
+#
+# either download network-root-truststore.jks from specified URL ...
+#
 {{ if .Values.jksSource }}
-set -x
 curl {{ .Values.jksSource }} -o ${NETWORK_ROOT_TRUSTSTORE}
 {{ end }}
 
+#
+# ... or wait for network-root-truststore.jks to be available
+#
 while true
 do
     if [ ! -f ${NETWORK_ROOT_TRUSTSTORE} ]
@@ -33,30 +36,29 @@ done
 #
 # we start CENM services up almost in parallel so wait until idman port is open
 #
-server=$(echo {{ .Values.networkServices.doormanURL }} | sed 's/.*\/\/\(.*\):\(.*\)/\1/' )
-port=$(echo {{ .Values.networkServices.doormanURL }} | sed 's/.*\/\/\(.*\):\(.*\)/\2/' )
-printf "IdMan server:%s" "${server}"
-printf "  IdMan port:%s" "${port}"
-timeout 10m bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' ${server} ${port}
+server=$(echo {{ .Values.prefix }}-{{ .Values.networkServices.doormanURL }} | sed 's/\(.*\):\(.*\)/\1/' )
+port=$(echo {{ .Values.networkServices.doormanURL }} | sed 's/\(.*\):\(.*\)/\2/' )
+printf "Identity Manager server:%s\n" "${server}"
+printf "  Identity Manager port:%s\n" "${port}"
+timeout 10m bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do echo "Waiting for Identity Manager to be accessible ..."; sleep 5; done' ${server} ${port}
 
 # two main reason for endless loop:
 #   - repeat in case IdMan is temporarily not available (real life experience ...)
-#   - kubernetes monitoring: pod stucks in initContainer which is easy to monitor
+#   - kubernetes monitoring: pod stuck in initContainer stage - helps with monitoring
 while true
 do
     if [ ! -f certificates/nodekeystore.jks ] || [ ! -f certificates/sslkeystore.jks ] || [ ! -f certificates/truststore.jks ]
     then
+        sleep 30 # guards against "Failed to find the request with id: ... in approved or done requests. This might happen when the Identity Manager was restarted during the approval process."
         echo
         echo "Notary: running initial registration ..."
         echo
-        pwd
         java -Dcapsule.jvm.args='-Xmx{{ .Values.cordaJarMx }}G' -jar {{ .Values.jarPath }}/corda.jar \
           initial-registration \
         --config-file={{ .Values.configPath }}/notary.conf \
         --log-to-console \
         --network-root-truststore ${NETWORK_ROOT_TRUSTSTORE}  \
         --network-root-truststore-password trust-store-password
-        # --logging-level=DEBUG
         EXIT_CODE=${?}
     else
         echo
@@ -69,20 +71,11 @@ done
 
 if [ "${EXIT_CODE}" -ne "0" ]
 then
-    HOW_LONG={{ .Values.sleepTimeAfterError }}
     echo
     echo "Notary initial registration failed - exit code: ${EXIT_CODE} (error)"
     echo
-    echo "Going to sleep for requested ${HOW_LONG} seconds to let you login and investigate."
+    echo "Going to sleep for the requested {{ .Values.sleepTimeAfterError }} seconds to let you log in and investigate."
     echo
-    pwd
-    ls -al 
-else
-    HOW_LONG={{ .Values.sleepTime }}
-    echo
-    echo "Notary initial registration: no errors - sleeping for requested ${HOW_LONG} seconds before disappearing."
-    echo
+    sleep {{ .Values.sleepTimeAfterError }}
 fi
-
-sleep ${HOW_LONG}
 echo

@@ -3,13 +3,11 @@ kind: Service
 metadata:
   name: {{ include "idman.fullname" . }}-internal
   labels:
-{{ include "idman.labels" . | indent 4 }}
-{{ include "cenm.labels" . | indent 4 }}
+    {{- include "idman.labels" . | nindent 4 }}
 spec:
-# we need healthCheckNodePort set to get rid of logs pollution
-{{- if (.Values.healthCheckNodePort) }}
+  {{- if .Values.healthCheckNodePort }}
   healthCheckNodePort: {{ .Values.healthCheckNodePort }}
-{{- end }}
+  {{- end }}
   ports:
     - port: {{ .Values.serviceInternal.port }}
       targetPort: {{ .Values.serviceInternal.port }}
@@ -19,6 +17,10 @@ spec:
       targetPort: {{ .Values.serviceRevocation.port }}
       protocol: TCP
       name: revocation
+    - port: {{ .Values.adminListener.port }}
+      targetPort: {{ .Values.adminListener.port }}
+      protocol: TCP
+      name: adminlistener
   selector:
-    app.kubernetes.io/name: {{ include "idman.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "idman.selectorLabels" . | nindent 4 }}
+    

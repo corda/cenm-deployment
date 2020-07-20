@@ -26,7 +26,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 subjects:
 - kind: Group
-  name: "[your-azure-group-id]" # use correct Azure group
+  name: "[use your own group]"
   apiGroup: rbac.authorization.k8s.io
 
 ---

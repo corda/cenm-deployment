@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "pki.fullname" . }}
+spec:
+  backoffLimit: {{ .Values.backoffLimit }}
+  template:
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: main
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.pkiImage.repository }}:{{ .Values.pkiImage.tag }}"
+          imagePullPolicy: {{ .Values.pkiImage.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args:
+          - |-
+            cp CM-FILES/pki.conf etc/pki.conf
+            cp CM-FILES/pki-azure.conf etc/pki-azure.conf
+            cp CM-FILES/run.sh bin/run.sh
+            chmod +x bin/run.sh
+            mkdir DATA/key-stores DATA/trust-stores DATA/crl-files
+            bin/run.sh
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+          - name: pki-etc
+            mountPath: /opt/cenm/etc
+          - name: hsm-libs
+            mountPath: /opt/cenm/HSM
+          - name: pki-conf
+            mountPath: /opt/cenm/CM-FILES/pki.conf
+            subPath: pki.conf
+          - name: pki-conf
+            mountPath: /opt/cenm/CM-FILES/pki-azure.conf
+            subPath: pki-azure.conf
+          - name: pki-conf
+            mountPath: /opt/cenm/CM-FILES/run.sh
+            subPath: run.sh
+      restartPolicy: OnFailure
+      volumes:
+        - name: pki-conf
+          configMap:
+            name: {{ .Values.prefix }}-pki-conf
+        - name: pki-etc
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-pki-etc
+        - name: pki-certs-keys
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-pki-certs-keys
+        - name: hsm-libs
+          persistentVolumeClaim:
+            claimName: {{ .Values.prefix }}-hsm-libs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
