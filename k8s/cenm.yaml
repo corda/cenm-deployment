@@ -28,21 +28,3 @@ subjects:
 - kind: Group
   name: "[use your own group]"
   apiGroup: rbac.authorization.k8s.io
-
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: cenm
-provisioner: kubernetes.io/azure-file
-parameters:
-  skuName: Standard_LRS
-mountOptions:
-  - dir_mode=0777
-  - file_mode=0777
-  - uid=1000
-  - gid=1000
-  - mfsymlinks
-  - nobrl
-  - cache=none
-allowVolumeExpansion: true
