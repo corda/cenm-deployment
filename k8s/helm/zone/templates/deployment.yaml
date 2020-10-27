@@ -21,11 +21,32 @@ spec:
       serviceAccountName: {{ include "zone.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      containers:
-        - name: main
+      initContainers:
+        - name: init-waitforpki
           env:
             - name: ACCEPT_LICENSE
               value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ required "zone[waitforpki]: missing value for .Values.image.repository" .Values.image.repository }}:{{ required "zone[waitforpki]: missing value for .Values.image.tag" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+          - |-
+            echo "Waiting for ./DATA/PKITOOL-DONE ..."
+            until [ -f ./DATA/PKITOOL-DONE ]
+            do
+              sleep 5
+            done
+            ls -al ./DATA/PKITOOL-DONE
+            echo "Waiting for ./DATA/PKITOOL-DONE ... done."
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: pki-certs-keys
+            mountPath: /opt/cenm/DATA
+      containers:
+        - name: main
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -35,7 +56,6 @@ spec:
           - |-
             cp CM-FILES/run.sh bin/run.sh
             bash bin/run.sh
-            sleep 120
           volumeMounts:
           - name: pki-certs-keys
             mountPath: /opt/cenm/DATA

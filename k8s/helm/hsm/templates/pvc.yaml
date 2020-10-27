@@ -5,8 +5,8 @@ metadata:
   name: {{ .Values.prefix }}-hsm-libs
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: {{ .Values.storageClass }}
+    - ReadWriteMany
+  storageClassName: {{ .Values.storageClassShared }}
   resources:
     requests:
       storage: {{ .Values.volumeSizeHsmLibs }}

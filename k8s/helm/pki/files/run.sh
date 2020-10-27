@@ -16,7 +16,9 @@ if [ -f {{ .Values.pkiJar.path }}/pkitool.jar ]
 then
 {{ if eq .Values.bashDebug true }}
     sha256sum {{ .Values.pkiJar.path }}/pkitool.jar
+{{ if eq .Values.bashDebug true }}
     cat {{ .Values.pkiJar.configPath }}/{{ .Values.pkiJar.configFile }}
+{{ end }}
 {{ end }}
     echo
     echo "CENM: starting PKI Tool process ..."

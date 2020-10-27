@@ -2,24 +2,24 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.prefix }}-farm-etc
+  name: {{ .Values.prefix }}-gateway-etc
 spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: {{ .Values.volumeSizeFarmEtc }}
+      storage: {{ .Values.volumeSizeGatewayEtc }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.prefix }}-farm-logs
+  name: {{ .Values.prefix }}-gateway-logs
 spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: {{ .Values.storageClass }}
   resources:
     requests:
-      storage: {{ .Values.volumeSizeFarmLogs }}
+      storage: {{ .Values.volumeSizeGatewayLogs }}

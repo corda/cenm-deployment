@@ -8,13 +8,13 @@ bashDebug: false
 # Docker images to use by the Identity Manager Service Helm chart
 dockerImage:
   name: corda/enterprise-identitymanager
-  tag: 1.3-zulu-openjdk8u242
+  tag: 1.4.0-zulu-openjdk8u242
   pullPolicy: Always
 
 # Docker images to use by CENM CLI Helm chart
 dockerImageCli:
   name: corda/enterprise-cli
-  tag: 1.3-zulu-openjdk8u242
+  tag: 1.4.0-zulu-openjdk8u242
   pullPolicy: Always
 
 # Volume size for etc/ directory

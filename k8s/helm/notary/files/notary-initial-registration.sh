@@ -60,9 +60,12 @@ do
         --network-root-truststore ${NETWORK_ROOT_TRUSTSTORE}  \
         --network-root-truststore-password trust-store-password
         EXIT_CODE=${?}
+        echo
+        echo "Initial registration exit code: ${EXIT_CODE}"
+        echo
     else
         echo
-        echo "Notary: already registered to IdMan - skipping initial registration."
+        echo "Notary: already registered to Identity Manager - skipping initial registration."
         echo
         EXIT_CODE="0"
         break

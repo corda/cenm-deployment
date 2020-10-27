@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-bashDebug: true
+bashDebug: false
 
 imagePullSecrets:
   - name:
@@ -48,7 +48,7 @@ tolerations: []
 
 affinity: {}
 
-storageClass: cenm
+storageClassShared: cenm-shared
 
 volumeSizeHsmLibs: 5Gi
 

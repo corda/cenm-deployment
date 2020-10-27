@@ -86,6 +86,8 @@ spec:
             mountPath: /opt/cenm/DATA
           - name: auth-etc
             mountPath: /opt/cenm/etc
+          - name: auth-logs
+            mountPath: /opt/cenm/logs
           - name: auth-h2
             mountPath: /opt/cenm/h2
           {{- if .Values.livenessProbe.enabled }}

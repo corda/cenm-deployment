@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.prefix }}-farm-conf
+  name: {{ .Values.prefix }}-gateway-conf
   labels:
-{{ include "farm.labels" . | indent 4 }}
+{{ include "gateway.labels" . | indent 4 }}
 data:
   run.sh: |+
 {{ tpl (.Files.Get "files/run.sh") . | indent 4 }}
 
-  farmservice.conf: |+
-{{ tpl (.Files.Get "files/farmservice.conf") . | indent 4 }}
+  gateway.conf: |+
+{{ tpl (.Files.Get "files/gateway.conf") . | indent 4 }}
 
   setupAuth.sh: |+
 {{ .Files.Get "files/setupAuth.sh" | indent 4 }}

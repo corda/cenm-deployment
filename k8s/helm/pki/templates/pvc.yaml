@@ -5,8 +5,8 @@ metadata:
   name: {{ .Values.prefix }}-pki-certs-keys
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: {{ .Values.storageClass }}
+    - ReadWriteMany
+  storageClassName: {{ .Values.storageClassShared }}
   resources:
     requests:
       storage: {{ .Values.volumeSizePkiCertsKeys }}

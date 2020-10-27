@@ -134,6 +134,12 @@ then
     helm install "${releasePrefix}"-notary-ip notary-ip --set prefix="${releasePrefix}"
 fi
 
+# Run HSM helm chart first to give more time for IP allocation for Identity Manager above
+
+announce "Triggering HSM image"
+printf "COMMAND: helm install %s-hsm hsm --set prefix=%s\n\n" "${releasePrefix}" "${releasePrefix}"
+helm install "${releasePrefix}"-hsm hsm --set prefix="${releasePrefix}"
+
 if [ "${idmanServiceAllocate}" == "true" ]
 then
     announce "Waiting until cloud provider has allocated public IP for Identity Manager (it may take a few minutes)"
@@ -144,7 +150,7 @@ fi
 
 while [ -z "${idmanPublicIP}" ]
 do
-    idmanPublicIP=$(kubectl get svc "${idmanServiceName}" --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    idmanPublicIP=$(kubectl get svc "${idmanServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].*}')
     # if idmanPublicIP has some value don't print anything on the screen
     if [ -z "${idmanPublicIP}" ]
     then
@@ -161,9 +167,6 @@ then
     printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
 fi
 
-announce "Triggering HSM image"
-printf "COMMAND: helm install %s-hsm hsm --set prefix=%s\n\n" "${releasePrefix}" "${releasePrefix}"
-helm install "${releasePrefix}"-hsm hsm --set prefix="${releasePrefix}"
 
 announce "Triggering PKI Tool"
 printf "COMMAND: helm install %s-pki pki --set idmanPublicIP=%s --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${idmanPublicIP}" "${releasePrefix}" "${acceptLicense}"
@@ -173,9 +176,9 @@ announce "Bootstrapping CENM Auth service"
 printf "COMMAND: helm install %s-auth auth --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
 helm install "${releasePrefix}"-auth auth --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
 
-announce "Bootstrapping CENM Farm service"
-printf "COMMAND: helm install %s-farm farm --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
-helm install "${releasePrefix}"-farm farm --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
+announce "Bootstrapping CENM Gateway service"
+printf "COMMAND: helm install %s-gateway gateway --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
+helm install "${releasePrefix}"-gateway gateway --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
 
 announce "Bootstrapping CENM Zone service"
 printf "COMMAND: helm install %s-zone zone --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
@@ -199,7 +202,7 @@ fi
 
 while [ -z "${notaryPublicIP}" ]
 do
-    notaryPublicIP=$(kubectl get svc "${notaryServiceName}" --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    notaryPublicIP=$(kubectl get svc "${notaryServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].*}')
     # if notaryPublicIP has some value don't print anything on the screen
     if [ -z "${notaryPublicIP}" ]
     then
@@ -225,28 +228,28 @@ printf "COMMAND: helm install %s-nmap nmap --set prefix=%s --set acceptLicense=%
 helm install "${releasePrefix}"-nmap nmap --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
 
 announce "Waiting until cloud provider has allocated public IP for CLI endpoint (it may take a few minutes)"
-farmStartTime=${SECONDS}
-while [ -z "${farmPublicIP}" ]
+gatewayStartTime=${SECONDS}
+while [ -z "${gatewayPublicIP}" ]
 do
-    farmPublicIP=$(kubectl get svc "${releasePrefix}"-farm --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
-    # if farmPublicIP has some value don't print anything on the screen
-    if [ -z "${farmPublicIP}" ]
+    gatewayPublicIP=$(kubectl get svc "${releasePrefix}"-gateway -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+    # if gatewayPublicIP has some value don't print anything on the screen
+    if [ -z "${gatewayPublicIP}" ]
     then
         printf "."
         sleep 5
     else
-        printf "\nfarmPublicIP = %s\n" "${farmPublicIP}"
+        printf "\ngatewayPublicIP = %s\n" "${gatewayPublicIP}"
     fi
 done
 
-elapsedTime=$((SECONDS - farmStartTime))
+elapsedTime=$((SECONDS - gatewayStartTime))
 printf "Public IP allocation elapsed time: %s seconds (~ %s minutes)\n\n" "$((elapsedTime))" "$((elapsedTime/60%60))"
 
 announce "Waiting until cloud provider has allocated public IP for Network Map (it may take a few minutes)"
 nmapStartTime=${SECONDS}
 while [ -z "${nmapPublicIP}" ]
 do
-    nmapPublicIP=$(kubectl get svc "${releasePrefix}"-nmap --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+    nmapPublicIP=$(kubectl get svc "${releasePrefix}"-nmap -o jsonpath='{.status.loadBalancer.ingress[0].*}')
     # if notaryPublicIP has some value don't print anything on the screen
     if [ -z "${nmapPublicIP}" ]
     then
@@ -265,14 +268,6 @@ printf "\n\nOverall elapsed time: %s seconds (~ %s minutes)\n\n" "${elapsedTime}
 
 printf "\n\nPlease wait until all components have finished bootstrapping - use 'kubectl get pods -o wide' to monitor progress.\n"
 
-farmPort=$(kubectl get svc "${releasePrefix}"-farm -o=jsonpath="{.spec.ports[0].port}")
-printf "\n\nCENM endpoint to connect using CENM CLI tool: "
-printf "%s:%s\n" "${farmPublicIP}" "${farmPort}"
+./bootstrap.cenm.connections -p "${releasePrefix}"
 
-idmanPort=$(kubectl get svc "${releasePrefix}"-idman-ip -o=jsonpath="{.spec.ports[0].port}")
-nmapPort=$(kubectl get svc "${releasePrefix}"-nmap -o=jsonpath="{.spec.ports[0].port}")
-
-printf "\nPlease use this snippet in your node.conf to register Corda nodes:\n"
-printf "\nnetworkServices {\n"
-printf "\tdoormanURL=\"http://%s:%s\"\n" "${idmanPublicIP}" "${idmanPort}"
-printf "\tnetworkMapURL=\"http://%s:%s\"\n}\n\n" "${nmapPublicIP}" "${nmapPort}"
+printf "\n\nTo display the above data again run ./bootstrap.cenm.connections -p %s \n\n" "${releasePrefix}"

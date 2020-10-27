@@ -5,17 +5,17 @@
 # Display more messages while executing Kubernetes deployment
 bashDebug: false
 
-# Docker images to use by the FARM Service Helm chart
-farmImage:
-  repository: corda/enterprise-farm
-  tag: 1.3-zulu-openjdk8u242
+# Docker images to use by the Gateway Service Helm chart
+gatewayImage:
+  repository: corda/enterprise-gateway
+  tag: 1.1.0-zulu-openjdk8u242
   pullPolicy: Always
 
 # Volume size for etc/ directory
-volumeSizeFarmEtc: 1Gi
+volumeSizeGatewayEtc: 1Gi
 
 # Volume size for logs/ directory
-volumeSizeFarmLogs: 5Gi
+volumeSizeGatewayLogs: 5Gi
 
 # Sleep time (in seconds) after an error occured
 sleepTimeAfterError: 300
@@ -23,8 +23,8 @@ sleepTimeAfterError: 300
 # Auth Service port
 authPort: 8081
 
-# Farm Service port
-farmPort: 8080
+# Gateway Service port
+gatewayPort: 8080
 
 # Zone Service port
 zonePort: 12345

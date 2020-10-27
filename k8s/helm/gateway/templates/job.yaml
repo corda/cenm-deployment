@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "farm.fullname" . }}-job
+  name: {{ include "gateway.fullname" . }}-job
   labels:
-    {{- include "farm.labels" . | nindent 4 }}
+    {{- include "gateway.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook-weight: "5"
 spec:
@@ -15,27 +15,27 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       initContainers:
-        - name: {{ .Chart.Name }}-check-farm
+        - name: {{ .Chart.Name }}-check-gateway
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
-          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          image: "{{ .Values.gatewayImage.repository }}:{{ .Values.gatewayImage.tag }}"
+          imagePullPolicy: {{ .Values.gatewayImage.pullPolicy }}
           command: ["/bin/bash", "-c"]
           args:
           - |-
-            echo Probing {{ .Values.prefix }}-farm port {{ .Values.farmPort }}
-            until nc -w 5 -vz {{ .Values.prefix }}-farm {{ .Values.farmPort }} > /dev/null 2>&1
+            echo Probing {{ .Values.prefix }}-gateway port {{ .Values.gatewayPort }}
+            until nc -w 5 -vz {{ .Values.prefix }}-gateway {{ .Values.gatewayPort }} > /dev/null 2>&1
             do
-              echo "Connect to {{ .Values.prefix }}-farm port {{ .Values.farmPort }} (tcp) failed: Connection refused"
+              echo "Connect to {{ .Values.prefix }}-gateway port {{ .Values.gatewayPort }} (tcp) failed: Connection refused"
             done
-            echo "Connection {{ .Values.prefix }}-farm port {{ .Values.farmPort }} successful"
+            echo "Connection {{ .Values.prefix }}-gateway port {{ .Values.gatewayPort }} successful"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-check-auth
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
-          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          image: "{{ .Values.gatewayImage.repository }}:{{ .Values.gatewayImage.tag }}"
+          imagePullPolicy: {{ .Values.gatewayImage.pullPolicy }}
           command: ["/bin/bash", "-c"]
           args:
           - |-
@@ -51,63 +51,63 @@ spec:
         - name: main
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
-          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          image: "{{ .Values.gatewayImage.repository }}:{{ .Values.gatewayImage.tag }}"
+          imagePullPolicy: {{ .Values.gatewayImage.pullPolicy }}
           command: ["/bin/bash", "-c"]
           args:
           - |-
             pwd
             cd /opt/cenm/CM-FILES/
             ls -alR
-            ./setupAuth.sh {{ .Values.prefix }}-farm {{ .Values.farmPort }}
+            ./setupAuth.sh {{ .Values.prefix }}-gateway {{ .Values.gatewayPort }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
           - name: pki-certs-keys
             mountPath: /opt/cenm/DATA
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/setupAuth.sh
             subPath: setupAuth.sh
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/g/editors.json
             subPath: editors.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/g/flagDayExecutors.json
             subPath: flagDayExecutors.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/g/readers-soft.json
             subPath: readers-soft.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/g/readers.json
             subPath: readers.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/g/signers.json
             subPath: signers.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/r/EditAndModify.json
             subPath: EditAndModify.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/r/FlagDayExecute.json
             subPath: FlagDayExecute.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/r/RadOnlyLockdown.json
             subPath: RadOnlyLockdown.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/r/ReadOnly.json
             subPath: ReadOnly.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/r/Signer.json
             subPath: Signer.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/u/james-flagday.json
             subPath: james-flagday.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/u/jenny-editor.json
             subPath: jenny-editor.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/u/johnny-reader.json
             subPath: johnny-reader.json
-          - name: farm-conf
+          - name: gateway-conf
             mountPath: /opt/cenm/CM-FILES/u/malcolm-signer.json
             subPath: malcolm-signer.json
       restartPolicy: OnFailure
@@ -115,9 +115,9 @@ spec:
         - name: pki-certs-keys
           persistentVolumeClaim:
             claimName: {{ .Values.prefix }}-pki-certs-keys
-        - name: farm-conf
+        - name: gateway-conf
           configMap:
-            name: {{ .Values.prefix }}-farm-conf
+            name: {{ .Values.prefix }}-gateway-conf
             defaultMode: 0777
       {{- with .Values.nodeSelector }}
       nodeSelector:

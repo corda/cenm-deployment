@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -ef -o pipefail
+
+print_help () {
+cat << EOF
+Usage: ${0##*/} ...
+    -h                          display help and exit
+    -p|--prefix [prefix]        specify release prefix for all Helm charts
+EOF
+}
+
+while [ $# -gt 0 ]
+do
+    case $1 in
+        -h|-\?|--help)
+            print_help
+            exit
+            ;;
+        -p|--prefix)
+            PrefixVar="${2}"
+            shift
+            shift
+            ;;
+        *)
+            print_help
+            exit
+            ;;
+    esac
+done
+
+releasePrefix=${PrefixVar:-cenm}
+
+gatewayPublicIP=$(kubectl get svc "${releasePrefix}"-gateway -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+gatewayPort=$(kubectl get svc "${releasePrefix}"-gateway -o=jsonpath="{.spec.ports[0].port}")
+idmanServiceName="${releasePrefix}"-idman-ip
+
+printf "\n\nCENM endpoint to connect using CENM CLI tool: "
+printf "%s:%s\n" "${gatewayPublicIP}" "${gatewayPort}"
+
+idmanPort=$(kubectl get svc "${releasePrefix}"-idman-ip -o=jsonpath="{.spec.ports[0].port}")
+nmapPort=$(kubectl get svc "${releasePrefix}"-nmap -o=jsonpath="{.spec.ports[0].port}")
+
+idmanPublicIP=$(kubectl get svc "${idmanServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+nmapPublicIP=$(kubectl get svc "${releasePrefix}"-nmap -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+
+printf "\nPlease use this snippet in your node.conf to register Corda nodes:\n"
+printf "\nnetworkServices {\n"
+printf "\tdoormanURL=\"http://%s:%s\"\n" "${idmanPublicIP}" "${idmanPort}"
+printf "\tnetworkMapURL=\"http://%s:%s\"\n}\n\n" "${nmapPublicIP}" "${nmapPort}"

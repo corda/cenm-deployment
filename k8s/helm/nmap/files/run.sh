@@ -9,7 +9,8 @@ set -x
 if [ -f {{ .Values.nmapJar.path }}/networkmap.jar ]
 then
 {{ if eq .Values.bashDebug true }}
-    sha256sum {{ .Values.nmapJar.path }}/networkmap.jar 
+    sha256sum {{ .Values.nmapJar.path }}/networkmap.jar
+    sha256sum {{ .Values.nmapJar.path }}/angel.jar
     cat {{ .Values.nmapJar.configPath }}/networkmap-init.conf
 {{ end }}
     echo
@@ -29,7 +30,7 @@ then
     --network-truststore=/opt/cenm/{{ .Values.networkRootTruststore.path }} \
     --truststore-password={{ .Values.networkRootTruststore.password }} \
     --root-alias={{ .Values.rootAlias }} \
-    --network-parameters-file={{ .Values.nmapJar.configPath }}/network-parameters.conf \
+    --network-parameters-file=/opt/cenm/etc/network-parameters.conf \
     --tls=true \
     --tls-keystore=/opt/cenm/DATA/key-stores/corda-ssl-network-map-keys.jks \
     --tls-keystore-password=password \

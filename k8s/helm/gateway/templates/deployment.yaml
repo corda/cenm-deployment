@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "farm.fullname" . }}
+  name: {{ include "gateway.fullname" . }}
   labels:
-    {{- include "farm.labels" . | nindent 4 }}
+    {{- include "gateway.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook-weight: "0"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "farm.selectorLabels" . | nindent 6 }}
+      {{- include "gateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "farm.selectorLabels" . | nindent 8 }}
+        {{- include "gateway.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "farm.serviceAccountName" . }}
+      serviceAccountName: {{ include "gateway.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
@@ -30,8 +30,8 @@ spec:
               value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
-          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          image: "{{ .Values.gatewayImage.repository }}:{{ .Values.gatewayImage.tag }}"
+          imagePullPolicy: {{ .Values.gatewayImage.pullPolicy }}
           command: ["/bin/bash", "-c"]
           args:
           - |-
@@ -47,27 +47,27 @@ spec:
         - name: main
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.farmImage.repository }}:{{ .Values.farmImage.tag }}"
-          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          image: "{{ .Values.gatewayImage.repository }}:{{ .Values.gatewayImage.tag }}"
+          imagePullPolicy: {{ .Values.gatewayImage.pullPolicy }}
           command: ["/bin/sh", "-c"]
           args:
           - |-
             pwd
-            df -h
             ls -alR
-            cat -n etc/farmservice.conf
             ./bin/run.sh
           volumeMounts:
-          - name: farm-conf
-            mountPath: /opt/cenm/etc/farmservice.conf
-            subPath: farmservice.conf
-          - name: farm-conf
+          - name: gateway-conf
+            mountPath: /opt/cenm/etc/gateway.conf
+            subPath: gateway.conf
+          - name: gateway-conf
             mountPath: /opt/cenm/bin/run.sh
             subPath: run.sh
           - name: pki-certs-keys
             mountPath: /opt/cenm/DATA
-          - name: farm-etc
-            mountPath: /opt/cenm/etc
+          - name: gateway-etc
+            mountPath: /opt/cenm/etc           
+          - name: gateway-logs
+            mountPath: /opt/cenm/logs
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             tcpSocket:
@@ -91,20 +91,20 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         {{- if .Values.logsContainersEnabled }}
-        - name: logs-farm
+        - name: logs-gateway
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ required "farm[logs]: missing value for .Values.farmImage.repository" .Values.farmImage.repository }}:{{ required "farm[logs]: missing value for .Values.farmImage.tag" .Values.farmImage.tag }}"
-          imagePullPolicy: {{ .Values.farmImage.pullPolicy }}
+          image: "{{ required "gateway[logs]: missing value for .Values.gatewayImage.repository" .Values.gatewayImage.repository }}:{{ required "gateway[logs]: missing value for .Values.gatewayImage.tag" .Values.gatewayImage.tag }}"
+          imagePullPolicy: {{ .Values.gatewayImage.pullPolicy }}
           command: ["/bin/bash", "-c"]
           args:
           - |-
             cd /opt/cenm/
-            while true; do tail -f logs/farm-service/*.log 2>/dev/null; sleep 5; done
+            while true; do tail -f logs/gateway-service/*.log 2>/dev/null; sleep 5; done
             # in case sth went wrong just wait indefinitely ...
             tail -f /dev/null
           volumeMounts:
-          - name: farm-logs
+          - name: gateway-logs
             mountPath: /opt/cenm/logs
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -113,16 +113,16 @@ spec:
         - name: pki-certs-keys
           persistentVolumeClaim:
             claimName: {{ .Values.prefix }}-pki-certs-keys
-        - name: farm-conf
+        - name: gateway-conf
           configMap:
-            name: {{ .Values.prefix }}-farm-conf
+            name: {{ .Values.prefix }}-gateway-conf
             defaultMode: 0777
-        - name: farm-etc
+        - name: gateway-etc
           persistentVolumeClaim:
-            claimName: {{ .Values.prefix }}-farm-etc
-        - name: farm-logs
+            claimName: {{ .Values.prefix }}-gateway-etc
+        - name: gateway-logs
           persistentVolumeClaim:
-            claimName: {{ .Values.prefix }}-farm-logs
+            claimName: {{ .Values.prefix }}-gateway-logs
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

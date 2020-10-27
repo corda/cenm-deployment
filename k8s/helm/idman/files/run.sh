@@ -9,7 +9,8 @@ set -x
 if [ -f {{ .Values.idmanJar.path }}/identitymanager.jar ]
 then
 {{ if eq .Values.bashDebug true }}
-    sha256sum {{ .Values.idmanJar.path }}/identitymanager.jar 
+    sha256sum {{ .Values.idmanJar.path }}/identitymanager.jar
+    sha256sum {{ .Values.idmanJar.path }}/angel.jar
     cat {{ .Values.idmanJar.configPath }}/identitymanager.conf
 {{ end }}
     echo
