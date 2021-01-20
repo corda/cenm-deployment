@@ -180,6 +180,9 @@ announce "Bootstrapping CENM Gateway service"
 printf "COMMAND: helm install %s-gateway gateway --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
 helm install "${releasePrefix}"-gateway gateway --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"
 
+echo "Waiting 300s before starting more services..."
+sleep 300s;
+
 announce "Bootstrapping CENM Zone service"
 printf "COMMAND: helm install %s-zone zone --set prefix=%s --set acceptLicense=%s\n\n" "${releasePrefix}" "${releasePrefix}" "${acceptLicense}"
 helm install "${releasePrefix}"-zone zone --set prefix="${releasePrefix}" --set acceptLicense="${acceptLicense}"

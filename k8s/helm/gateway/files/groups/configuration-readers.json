@@ -1,0 +1,7 @@
+{
+  "admin": "false",
+  "autoEnroll": "false",
+  "description": "Can read configurations",
+  "name": "configuration-readers",
+  "users": [ "config-reader" ]
+}

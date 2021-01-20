@@ -1,0 +1,8 @@
+{
+  "name": "network-operator",
+  "email": "network-operator@megacorp.com",
+  "password": "p4ssWord",
+  "enabled": "true",
+  "groups": [ ],
+  "admin": "false"
+}

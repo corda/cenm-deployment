@@ -69,47 +69,68 @@ spec:
             mountPath: /opt/cenm/CM-FILES/setupAuth.sh
             subPath: setupAuth.sh
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/g/editors.json
-            subPath: editors.json
+            mountPath: /opt/cenm/CM-FILES/g/ca-signers.json
+            subPath: ca-signers.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/g/flagDayExecutors.json
-            subPath: flagDayExecutors.json
+            mountPath: /opt/cenm/CM-FILES/g/configuration-maintainers.json
+            subPath: configuration-maintainers.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/g/readers-soft.json
-            subPath: readers-soft.json
+            mountPath: /opt/cenm/CM-FILES/g/configuration-readers.json
+            subPath: configuration-readers.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/g/readers.json
-            subPath: readers.json
+            mountPath: /opt/cenm/CM-FILES/g/network-maintainers.json
+            subPath: network-maintainers.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/g/signers.json
-            subPath: signers.json
+            mountPath: /opt/cenm/CM-FILES/g/network-operation-readers.json
+            subPath: network-operation-readers.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/r/EditAndModify.json
-            subPath: EditAndModify.json
+            mountPath: /opt/cenm/CM-FILES/g/network-operators.json
+            subPath: network-operators.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/r/FlagDayExecute.json
-            subPath: FlagDayExecute.json
+            mountPath: /opt/cenm/CM-FILES/g/nonca-signers.json
+            subPath: nonca-signers.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/r/RadOnlyLockdown.json
-            subPath: RadOnlyLockdown.json
+            mountPath: /opt/cenm/CM-FILES/r/CASigner.json
+            subPath: CASigner.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/r/ReadOnly.json
-            subPath: ReadOnly.json
+            mountPath: /opt/cenm/CM-FILES/r/ConfigurationMaintainer.json
+            subPath: ConfigurationMaintainer.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/r/Signer.json
-            subPath: Signer.json
+            mountPath: /opt/cenm/CM-FILES/r/ConfigurationReader.json
+            subPath: ConfigurationReader.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/u/james-flagday.json
-            subPath: james-flagday.json
+            mountPath: /opt/cenm/CM-FILES/r/NetworkMaintainer.json
+            subPath: NetworkMaintainer.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/u/jenny-editor.json
-            subPath: jenny-editor.json
+            mountPath: /opt/cenm/CM-FILES/r/NetworkOperationsReader.json
+            subPath: NetworkOperationsReader.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/u/johnny-reader.json
-            subPath: johnny-reader.json
+            mountPath: /opt/cenm/CM-FILES/r/NetworkOperator.json
+            subPath: NetworkOperator.json
           - name: gateway-conf
-            mountPath: /opt/cenm/CM-FILES/u/malcolm-signer.json
-            subPath: malcolm-signer.json
+            mountPath: /opt/cenm/CM-FILES/r/NonCASigner.json
+            subPath: NonCASigner.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/business-reader.json
+            subPath: business-reader.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/ca-signer.json
+            subPath: ca-signer.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/config-maintainer.json
+            subPath: config-maintainer.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/config-reader.json
+            subPath: config-reader.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/network-maintainer.json
+            subPath: network-maintainer.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/network-operator.json
+            subPath: network-operator.json
+          - name: gateway-conf
+            mountPath: /opt/cenm/CM-FILES/u/nonca-signer.json
+            subPath: nonca-signer.json
       restartPolicy: OnFailure
       volumes:
         - name: pki-certs-keys

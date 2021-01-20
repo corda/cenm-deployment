@@ -1,0 +1,7 @@
+{
+  "admin": "false",
+  "autoEnroll": "false",
+  "description": "Can do non-CA signing related operations",
+  "name": "nonca-signers",
+  "users": [ "nonca-signer" ]
+}

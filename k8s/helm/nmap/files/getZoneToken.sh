@@ -21,7 +21,7 @@ then
     until [ "${EXIT_CODE}" -eq "0" ]
     do
         echo "Trying to login to {{ .Values.prefix }}-gateway:8080 ..."
-        java -jar bin/cenm-tool.jar context login -s http://{{ .Values.prefix }}-gateway:8080 -u jenny-editor -p password
+        java -jar bin/cenm-tool.jar context login -s http://{{ .Values.prefix }}-gateway:8080 -u network-maintainer -p p4ssWord
         EXIT_CODE=${?}
         if [ "${EXIT_CODE}" -ne "0" ]
         then

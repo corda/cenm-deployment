@@ -1,0 +1,8 @@
+{
+  "name": "ca-signer",
+  "email": "ca-signer@megacorp.com",
+  "password": "p4ssWord",
+  "enabled": "true",
+  "groups": [ ],
+  "admin": "false"
+}

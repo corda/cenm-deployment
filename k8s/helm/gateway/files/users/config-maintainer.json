@@ -1,0 +1,8 @@
+{
+  "name": "config-maintainer",
+  "email": "config-maintainer@megacorp.com",
+  "password": "p4ssWord",
+  "enabled": "true",
+  "groups": [ ],
+  "admin": "false"
+}

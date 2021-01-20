@@ -1,0 +1,8 @@
+{
+  "name": "config-reader",
+  "email": "config-reader@megacorp.com",
+  "password": "p4ssWord",
+  "enabled": "true",
+  "groups": [ ],
+  "admin": "false"
+}

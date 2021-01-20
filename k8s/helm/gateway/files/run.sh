@@ -9,8 +9,14 @@ set -x
 if [ -f bin/gateway.jar ]
 then
 {{ if eq .Values.bashDebug true }}
-    sha256sum bin/gateway.jar 
-    cat gateway.conf
+    sha256sum bin/gateway.jar
+    while [ ! -f etc/gateway.conf ];
+      do
+        echo "Waiting for file etc/gateway.conf";
+        ls ets;
+        sleep 5;
+      done
+    cat etc/gateway.conf
 {{ end }}
     echo
     echo "CENM: starting CENM Gateway service ..."
