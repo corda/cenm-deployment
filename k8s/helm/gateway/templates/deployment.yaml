@@ -45,6 +45,9 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
       containers:
         - name: main
+          env:
+            - name: "CENM_ZONE_PORT"
+              value: "12345"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.gatewayImage.repository }}:{{ .Values.gatewayImage.tag }}"
