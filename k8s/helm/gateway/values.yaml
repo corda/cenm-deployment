@@ -8,7 +8,7 @@ bashDebug: false
 # Docker images to use by the Gateway Service Helm chart
 gatewayImage:
   repository: corda/enterprise-gateway
-  tag: 1.1.0-zulu-openjdk8u242
+  tag: 1.1.1-zulu-openjdk8u242
   pullPolicy: Always
 
 # Volume size for etc/ directory

@@ -14,7 +14,7 @@ volumeSizePkiEtc: 1Gi
 # Docker images to use by the PKI Helm chart
 pkiImage:
   repository: corda/enterprise-pkitool
-  tag: 1.4.0-zulu-openjdk8u242
+  tag: 1.4.3-zulu-openjdk8u242
   pullPolicy: Always
 
 pkiJar:
