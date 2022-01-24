@@ -6,4 +6,4 @@ Documentation on Corda Enterprise Network Manager (CENM) can be found at [CENM D
 
 | CENM version  | Command to run      |
 | ------------- |---------------------|
-| 1.3.4           | git checkout v1.3.4   |
+| 1.3.5           | git checkout v1.3.5   |

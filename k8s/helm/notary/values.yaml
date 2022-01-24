@@ -8,7 +8,7 @@ bashDebug: false
 # Docker images to use by the Notary Helm chart
 dockerImage:
   name: corda/enterprise-notary
-  tag: 4.4.10-zulu-openjdk8u242
+  tag: 4.5.9-zulu-openjdk8u242
   pullPolicy: Always
 
 # Volume size for Notary bin/ directory
