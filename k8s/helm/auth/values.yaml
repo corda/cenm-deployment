@@ -8,7 +8,7 @@ bashDebug: false
 # Docker images to use by the Auth Service Helm chart
 authImage:
   repository: corda/enterprise-auth
-  tag: 1.0.2-zulu-openjdk8u242
+  tag: 1.0.3-zulu-openjdk8u242
   pullPolicy: Always
 
 # Configuration for database
