@@ -8,13 +8,13 @@ bashDebug: false
 # Docker images to use by the Identity Manager Service Helm chart
 dockerImage:
   name: corda/enterprise-identitymanager
-  tag: 1.5.5-zulu-openjdk8u322
+  tag: 1.5.6-zulu-openjdk8u322
   pullPolicy: Always
 
 # Docker images to use by CENM CLI Helm chart
 dockerImageCli:
   name: corda/enterprise-cli
-  tag: 1.5.5-zulu-openjdk8u322
+  tag: 1.5.6-zulu-openjdk8u322
   pullPolicy: Always
 
 # Volume size for etc/ directory
@@ -140,10 +140,6 @@ storageClass: cenm
 # Local policy and healthCheckNodePort are set to get rid of logs pollution
 healthCheckNodePort: 0
 externalTrafficPolicy: Local
-
-service:
-  type: LoadBalancer
-  port: 10000
 
 serviceInternal:
   type: LoadBalancer
