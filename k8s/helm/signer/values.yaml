@@ -8,12 +8,12 @@ bashDebug: false
 # Docker images to use by the Signing Service Helm chart
 signerImage:
   repository: corda/enterprise-signer
-  tag: 1.5.5-zulu-openjdk8u322
+  tag: 1.5.6-zulu-openjdk8u322
   pullPolicy: Always
 
 dockerImageCli:
   repository: corda/enterprise-cli
-  tag: 1.5.5-zulu-openjdk8u322
+  tag: 1.5.6-zulu-openjdk8u322
   pullPolicy: Always
 
 # Volume size for the etc/ directory
