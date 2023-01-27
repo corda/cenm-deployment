@@ -95,9 +95,11 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-service:
-  type: ClusterIP
-  port: 80
+### This has been commented out due to a double `service:` block causing incorrect yaml
+### This service key looks like the anomaly wrt the other helm charts so it has been removed
+# service:
+#   type: ClusterIP
+#   port: 80
 
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -140,6 +142,10 @@ storageClass: cenm
 # Local policy and healthCheckNodePort are set to get rid of logs pollution
 healthCheckNodePort: 0
 externalTrafficPolicy: Local
+
+service:
+  type: LoadBalancer
+  port: 10000
 
 serviceInternal:
   type: LoadBalancer
