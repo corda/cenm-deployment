@@ -15,6 +15,9 @@ data:
   setupAuth.sh: |+
 {{ .Files.Get "files/setupAuth.sh" | indent 4 }}
 
+  log4j2.xml: |+
+{{ tpl (.Files.Get "files/log4j2.xml") . | indent 4 }}
+
 {{- tpl ((.Files.Glob "files/users/*.json").AsConfig) . | nindent 2 }}
 {{- tpl ((.Files.Glob "files/roles/*.json").AsConfig) . | nindent 2 }}
 {{- tpl ((.Files.Glob "files/groups/*.json").AsConfig) . | nindent 2 }}

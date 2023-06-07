@@ -11,3 +11,6 @@ data:
 
   authservice.conf: |+
 {{ tpl (.Files.Get "files/authservice.conf") . | indent 4 }}
+
+  log4j2.xml: |+
+{{ tpl (.Files.Get "files/log4j2.xml") . | indent 4 }}

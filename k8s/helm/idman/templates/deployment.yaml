@@ -43,7 +43,10 @@ spec:
             mountPath: /opt/cenm/etc
           - name: idman-conf
             mountPath: /opt/cenm/CM/run.sh
-            subPath: run.sh
+            subPath: run.
+          - name: idman-conf
+            mountPath: /opt/cenm/CM/log4j2.xml
+            subPath: log4j2.xml
           - name: idman-conf
             mountPath: /opt/cenm/CM/identitymanager-init.conf
             subPath: identitymanager-init.conf
@@ -88,6 +91,9 @@ spec:
           - name: idman-conf
             mountPath: /opt/cenm/CM/identitymanager-init.conf
             subPath: identitymanager-init.conf
+          - name: idman-conf
+            mountPath: /opt/cenm/bin/log4j2.xml
+            subPath: log4j2.xml
           - name: idman-conf
             mountPath: /opt/cenm/CM/getZoneToken.sh
             subPath: getZoneToken.sh
@@ -134,6 +140,9 @@ spec:
           - name: idman-conf
             mountPath: /opt/cenm/CM/identitymanager-init.conf
             subPath: identitymanager-init.conf
+          - name: idman-conf
+            mountPath: /opt/cenm/bin/log4j2.xml
+            subPath: log4j2.xml
           - name: idman-logs
             mountPath: /opt/cenm/logs
           - name: idman-h2

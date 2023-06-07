@@ -82,6 +82,9 @@ spec:
           - name: auth-conf
             mountPath: /opt/cenm/run.sh
             subPath: run.sh
+          - name: auth-conf
+            mountPath: /opt/cenm/log4j2.xml
+            subPath: log4j2.xml
           - name: pki-certs-keys
             mountPath: /opt/cenm/DATA
           - name: auth-etc

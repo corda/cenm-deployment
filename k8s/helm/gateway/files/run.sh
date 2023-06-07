@@ -21,7 +21,7 @@ then
     echo
     echo "CENM: starting CENM Gateway service ..."
     echo
-    java -jar bin/gateway.jar --config-file etc/gateway.conf
+    java -Dlog4j.configurationFile=log4j2.xml -jar bin/gateway.jar --config-file etc/gateway.conf
     EXIT_CODE=${?}
 else
     echo "Missing gateway service jar file."

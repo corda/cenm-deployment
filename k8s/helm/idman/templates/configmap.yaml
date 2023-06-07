@@ -14,3 +14,6 @@ data:
 
   identitymanager-init.conf: |+
     {{ tpl (.Files.Get "files/identitymanager-init.conf") . | nindent 4 }}
+
+  log4j2.xml: |+
+    {{ tpl (.Files.Get "files/log4j2.xml") . | nindent 4 }}

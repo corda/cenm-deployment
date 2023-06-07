@@ -19,7 +19,8 @@ then
     TOKEN=$(cat {{ .Values.nmapJar.configPath }}/token)
     ls -alR
     set -x
-    java -jar {{ .Values.nmapJar.path }}/angel.jar \
+    java -Dlog4j.configurationFile=log4j2.xml -Dlog4j2.configurationFile=log4j2.xml -Dlog4j2.configurationFile=file://log4j2.xml \
+    -jar {{ .Values.nmapJar.path }}/angel.jar \
     --jar-name={{ .Values.nmapJar.path }}/networkmap.jar \
     --zone-host={{ .Values.prefix }}-zone \
     --zone-port=25000 \

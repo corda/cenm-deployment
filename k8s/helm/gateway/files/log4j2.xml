@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ R3 Proprietary and Confidential
+  ~
+  ~ Copyright (c) 2018 R3 Limited.  All rights reserved.
+  ~
+  ~ The intellectual and technical concepts contained herein are proprietary to R3 and its suppliers and are protected by trade secret law.
+  ~
+  ~ Distribution of this file or any portion thereof via any medium without the express permission of R3 is strictly prohibited.
+  -->
+
+<!--
+    log4j2.xml / log4j2-test.xml must be configured correctly for contextual logging to function.
+    Specifically, three Loggers must be defined with "name" attributes: "AUDIT", "OPS" and "DEV".
+    Contextual logging is initialised via the instantiation of LoggingConfig objects typically in
+    Main.kt. When a LoggingConfig is instantiated, LoggerConfigurator.kt checks log4j2.xml to
+    determine whether the Logger definitions exist, and proceeds with associating the required
+    Appenders as specified by the LoggingConfig.
+ -->
+
+<Configuration status="info">
+    <Properties>
+        <Property name="log-path">logs</Property>
+        <Property name="archive">${sys:log-path}/archive</Property>
+        <Property name="consoleLogLevel">off</Property> <!-- This level can be set programmatically via command line flag-->
+        <Property name="defaultLogLevel">info</Property>
+        <Property name="node-logname">dump-kk-${hostName}</Property>
+    </Properties>
+    <ThresholdFilter level="trace"/>
+    <Appenders>
+        <Console name="Console-Appender" target="SYSTEM_OUT">
+            <PatternLayout pattern="%highlight{%level{length=1} %date{HH:mm:ssZ} [%t] %c{2}.%method - %msg %X%n}{INFO=white,WARN=red,FATAL=bright red}" />
+        </Console>
+        <!-- Required for printing to console -->
+        <!-- Suppresses printing stacktraces when we want to use this appender only for user communication -->
+        <Console name="Console-Appender-Println" target="SYSTEM_OUT">
+            <PatternLayout pattern="%msg%n %throwable{0}"/>
+        </Console>
+        <!-- Will generate up to 10 log files for a given day. During every rollover it will delete
+        those that are older than 60 days, but keep the most recent 10 GB -->
+        <RollingFile name="RollingFile-Appender"
+                     fileName="${sys:log-path}/${node-logname}.log"
+                     filePattern="${archive}/${node-logname}.%date{yyyy-MM-dd}-%i.log.gz"
+                     createOnDemand="true">
+            <PatternLayout pattern="[%-5level] %date{ISO8601}{UTC}Z [%t] %c{2}.%method - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy min="1" max="10">
+                <Delete basePath="${archive}" maxDepth="1">
+                    <IfFileName glob="${node-logname}*.log.gz"/>
+                    <IfLastModified age="60d">
+                        <IfAny>
+                            <IfAccumulatedFileSize exceeds="10 GB"/>
+                        </IfAny>
+                    </IfLastModified>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="${sys:defaultLogLevel}">
+            <AppenderRef ref="RollingFile-Appender"/>
+        </Root>
+        <!-- Special logger when we want to print both to console and to file -->
+        <Logger name="ConsolePrint" additivity="false">
+            <AppenderRef ref="Console-Appender-Println"/>
+        </Logger>
+        <Logger name="CONSOLE" additivity="false">
+            <AppenderRef ref="Console-Appender-Println"/>
+        </Logger>
+        <Logger name="AUDIT" additivity="true" />
+        <Logger name="OPS" additivity="true" />
+        <Logger name="DEV" additivity="true" />
+    </Loggers>
+</Configuration>

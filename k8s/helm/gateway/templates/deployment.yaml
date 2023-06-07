@@ -65,6 +65,9 @@ spec:
           - name: gateway-conf
             mountPath: /opt/cenm/bin/run.sh
             subPath: run.sh
+          - name: gateway-conf
+            mountPath: /opt/cenm/bin/log4j2.xml
+            subPath: log4j2.xml
           - name: pki-certs-keys
             mountPath: /opt/cenm/DATA
           - name: gateway-etc

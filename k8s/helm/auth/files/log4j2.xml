@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    log4j2.xml / log4j2-test.xml must be configured correctly for contextual logging to function.
+    Specifically, three Loggers must be defined with "name" attributes: "AUDIT", "OPS" and "DEV".
+    Contextual logging is initialised via the instantiation of LoggingConfig objects typically in
+    Main.kt. When a LoggingConfig is instantiated, LoggerConfigurator.kt checks log4j2.xml to
+    determine whether the Logger definitions exist, and proceeds with associating the required
+    Appenders as specified by the LoggingConfig.
+ -->
+<Configuration status="info">
+    <Properties>
+        <Property name="log-path">logs</Property>
+        <Property name="archive">${sys:log-path}/archive</Property>
+        <Property name="consoleLogLevel">info</Property> <!-- This level can be set programmatically via command line flag-->
+        <Property name="defaultLogLevel">info</Property>
+        <Property name="node-logname">dump-${hostName}</Property>
+    </Properties>
+    <ThresholdFilter level="trace"/>
+    <Appenders>
+        <Console name="Console-Appender" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%-5level] %date{ISO8601}{UTC}Z [%t] %c{2}.%method - %msg %X%n" />
+        </Console>
+        <!-- Required for printing to console -->
+        <!-- Suppresses printing stacktraces when we want to use this appender only for user communication -->
+        <Console name="Console-Appender-Println" target="SYSTEM_OUT">
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="${defaultLogLevel}">
+            <AppenderRef ref="Console-Appender" level="${consoleLogLevel}"/>
+        </Root>
+
+        <!-- Special logger when we want to print both to console and to file -->
+        <Logger name="ConsolePrint" additivity="false">
+            <AppenderRef ref="Console-Appender"/>
+        </Logger>
+        <Logger name="CONSOLE" additivity="false">
+            <AppenderRef ref="Console-Appender"/>
+        </Logger>
+        <Logger name="AUDIT" additivity="true" />
+        <Logger name="OPS" additivity="true" />
+        <Logger name="DEV" additivity="true" />
+    </Loggers>
+</Configuration>

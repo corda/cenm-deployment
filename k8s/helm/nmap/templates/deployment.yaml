@@ -91,6 +91,9 @@ spec:
           - name: nmap-conf
             mountPath: /opt/cenm/CM-FILES/run.sh
             subPath: run.sh
+          - name: nmap-conf
+            mountPath: /opt/cenm/bin/log4j2.xml
+            subPath: log4j2.xml
           - name: notary-nodeinfo
             mountPath: /opt/cenm/notary-nodeinfo
           - name: nmap-h2

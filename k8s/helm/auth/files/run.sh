@@ -11,7 +11,7 @@ then
     echo
     echo "CENM: starting CENM Auth service ..."
     echo
-    java -jar bin/accounts-application.jar --config-file authservice.conf --initial-user-name admin --initial-user-password p4ssWord --keep-running --verbose
+    java -Dlog4j.configurationFile=log4j2.xml -jar bin/accounts-application.jar --config-file authservice.conf --initial-user-name admin --initial-user-password p4ssWord --keep-running --verbose
     EXIT_CODE=${?}
 else
     echo "Missing Auth service jar file."

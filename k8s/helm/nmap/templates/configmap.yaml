@@ -20,3 +20,6 @@ data:
 
   network-parameters-update-example.conf: |+
     {{ tpl (.Files.Get "files/network-parameters-update-example.conf") . | nindent 4 }}
+
+  log4j2.xml: |+
+    {{ tpl (.Files.Get "files/log4j2.xml") . | nindent 4 }}

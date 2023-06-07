@@ -18,7 +18,7 @@ then
     echo
     TOKEN=$(cat {{ .Values.idmanJar.configPath }}/token)
     ls -alR
-    java -jar {{ .Values.idmanJar.path }}/angel.jar \
+    java -jar -Dlog4j.configurationFile=log4j2.xml {{ .Values.idmanJar.path }}/angel.jar \
     --jar-name={{ .Values.idmanJar.path }}/identitymanager.jar \
     --zone-host={{ .Values.prefix }}-zone \
     --zone-port=25000 \
