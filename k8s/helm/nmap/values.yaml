@@ -17,12 +17,12 @@ volumeSizeNmapH2: 10Gi
 # Docker images to use for the Network Map Service Helm chart
 dockerImage:
   repository: corda/enterprise-networkmap
-  tag: 1.5.8-zulu-openjdk8u322
+  tag: 1.6-zulu-openjdk8u392
   pullPolicy: Always
 
 dockerImageCli:
   repository: corda/enterprise-cli
-  tag: 1.5.8-zulu-openjdk8u322
+  tag: 1.6-zulu-openjdk8u392
   pullPolicy: Always
 
 # Required parameter
