@@ -59,7 +59,7 @@ networkServices:
   networkMapURL: nmap:10000
 
 # Minimum platform version
-mpv: 3
+mpv: 4
 
 # Database configuration
 dataSourceProperties:
