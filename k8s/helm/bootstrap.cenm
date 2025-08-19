@@ -150,7 +150,7 @@ fi
 
 while [ -z "${idmanPublicIP}" ]
 do
-    idmanPublicIP=$(kubectl get svc "${idmanServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+    idmanPublicIP=$(kubectl get svc "${idmanServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     # if idmanPublicIP has some value don't print anything on the screen
     if [ -z "${idmanPublicIP}" ]
     then
@@ -202,7 +202,7 @@ fi
 
 while [ -z "${notaryPublicIP}" ]
 do
-    notaryPublicIP=$(kubectl get svc "${notaryServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+    notaryPublicIP=$(kubectl get svc "${notaryServiceName}" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     # if notaryPublicIP has some value don't print anything on the screen
     if [ -z "${notaryPublicIP}" ]
     then
@@ -231,7 +231,7 @@ announce "Waiting until cloud provider has allocated public IP for CLI endpoint 
 gatewayStartTime=${SECONDS}
 while [ -z "${gatewayPublicIP}" ]
 do
-    gatewayPublicIP=$(kubectl get svc "${releasePrefix}"-gateway -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+    gatewayPublicIP=$(kubectl get svc "${releasePrefix}"-gateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     # if gatewayPublicIP has some value don't print anything on the screen
     if [ -z "${gatewayPublicIP}" ]
     then
@@ -249,7 +249,7 @@ announce "Waiting until cloud provider has allocated public IP for Network Map (
 nmapStartTime=${SECONDS}
 while [ -z "${nmapPublicIP}" ]
 do
-    nmapPublicIP=$(kubectl get svc "${releasePrefix}"-nmap -o jsonpath='{.status.loadBalancer.ingress[0].*}')
+    nmapPublicIP=$(kubectl get svc "${releasePrefix}"-nmap -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     # if notaryPublicIP has some value don't print anything on the screen
     if [ -z "${nmapPublicIP}" ]
     then
