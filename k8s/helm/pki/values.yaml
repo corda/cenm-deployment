@@ -14,7 +14,7 @@ volumeSizePkiEtc: 1Gi
 # Docker images to use by the PKI Helm chart
 pkiImage:
   repository: acrcenm.azurecr.io/pkitool/pkitool
-  tag: 1.7-RC03-zulu-openjdk17.0.15
+  tag: 1.7-RC04-zulu-openjdk17.0.15
   pullPolicy: Always
 
 pkiJar:

@@ -8,12 +8,12 @@ bashDebug: false
 # Docker images to use by the Signing Service Helm chart
 signerImage:
   repository: acrcenm.azurecr.io/signer/signer
-  tag: 1.7-RC03-zulu-openjdk17.0.15
+  tag: 1.7-RC04-zulu-openjdk17.0.15
   pullPolicy: Always
 
 dockerImageCli:
   repository: acrcenm.azurecr.io/cli/cli
-  tag: 1.7-RC03-zulu-openjdk17.0.15
+  tag: 1.7-RC04-zulu-openjdk17.0.15
   pullPolicy: Always
 
 # Volume size for the etc/ directory

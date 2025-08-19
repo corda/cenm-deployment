@@ -7,7 +7,7 @@ bashDebug: false
 
 image:
   repository: acrcenm.azurecr.io/zone/zone
-  tag: 1.7-RC03-zulu-openjdk17.0.15
+  tag: 1.7-RC04-zulu-openjdk17.0.15
   pullPolicy: Always
 
 # Database configuration
