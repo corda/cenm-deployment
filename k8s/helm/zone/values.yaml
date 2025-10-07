@@ -7,7 +7,7 @@ bashDebug: false
 
 image:
   repository: corda/enterprise-zone
-  tag: 1.7-zulu-openjdk17.0.15
+  tag: 1.7.1-zulu-openjdk17.0.16
   pullPolicy: Always
 
 # Database configuration
