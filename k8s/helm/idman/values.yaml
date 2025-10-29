@@ -7,14 +7,14 @@ bashDebug: false
 
 # Docker images to use by the Identity Manager Service Helm chart
 dockerImage:
-  name: corda/enterprise-identitymanager
-  tag: 1.7.1-zulu-openjdk17.0.16
+  name: acrcenm.azurecr.io/identitymanager/identitymanager
+  tag: 1.7.2-RC01-zulu-openjdk-alpine17.0.17
   pullPolicy: Always
 
 # Docker images to use by CENM CLI Helm chart
 dockerImageCli:
-  name: corda/enterprise-cli
-  tag: 1.7.1-zulu-openjdk17.0.16
+  name: acrcenm.azurecr.io/cli/cli
+  tag: 1.7.2-RC01-zulu-openjdk17.0.17
   pullPolicy: Always
 
 # Volume size for etc/ directory
