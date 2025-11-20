@@ -6,7 +6,7 @@
 bashDebug: false
 
 image:
-  repository: acrcenm.azurecr.io/zone/zone
+  repository: corda/enterprise-zone
   tag: 1.7.2-zulu-openjdk-alpine17.0.17
   pullPolicy: Always
 
