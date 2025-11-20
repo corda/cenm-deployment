@@ -8,7 +8,7 @@ bashDebug: false
 # Docker images to use by the Gateway Service Helm chart
 gatewayImage:
   repository: acrcenm.azurecr.io/gateway/gateway
-  tag: 1.7.2-RC01-zulu-openjdk-alpine17.0.17
+  tag: 1.7.2-zulu-openjdk-alpine17.0.17
   pullPolicy: Always
 
 # Volume size for etc/ directory
