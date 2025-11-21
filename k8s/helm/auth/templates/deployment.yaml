@@ -23,6 +23,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         - name: init-waitforpki
+          workingDir: /opt/cenm
           env:
             - name: ACCEPT_LICENSE
               value: "{{required "You must accept the license agreement to use this software." .Values.acceptLicense }}"
@@ -48,6 +49,7 @@ spec:
           - name: pki-certs-keys
             mountPath: /opt/cenm/DATA
         - name: init-jwt
+          workingDir: /opt/cenm
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.authImage.repository }}:{{ .Values.authImage.tag }}"
@@ -64,6 +66,7 @@ spec:
             mountPath: /opt/cenm/etc
       containers:
         - name: main
+          workingDir: /opt/cenm
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.authImage.repository }}:{{ .Values.authImage.tag }}"
@@ -114,11 +117,12 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
         {{- if .Values.logsContainersEnabled }}
         - name: logs-auth
+          workingDir: /opt/cenm
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ required "auth[logs]: missing value for .Values.authImage.repository" .Values.authImage.repository }}:{{ required "auth[logs]: missing value for .Values.authImage.tag" .Values.authImage.tag }}"
           imagePullPolicy: {{ .Values.authImage.pullPolicy }}
-          command: ["/bin/bash", "-c"]
+          command: ["/bin/sh", "-c"]
           args:
           - |-
             cd /opt/cenm/
